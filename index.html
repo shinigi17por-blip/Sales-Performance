@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Device Attach Rate GIA Dashboard (Editable)</title>
+<style>
+  :root{
+    --dark: #1e2a38;
+    --dark-2: #26374a;
+    --light-bg: #f4f6f9;
+    --card-bg: #ffffff;
+    --border: #e2e6ec;
+    --text-main: #1e2a38;
+    --text-sub: #6b7684;
+    --accent: #2f6fed;
+    --good: #1e8e5a;
+    --bad: #d64545;
+    --warn: #e0932c;
+    --edit-bg: #fff9e6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Segoe UI",Arial,"Sarabun",sans-serif;background:var(--light-bg);color:var(--text-main);}
+  .wrap{max-width:1320px;margin:0 auto;padding:24px 20px 60px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+  .topbar h1{font-size:22px;margin:0 0 4px;font-weight:600;}
+  .topbar .sub{color:var(--text-sub);font-size:13px;}
+  .date-input-wrap{display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+  .date-input-wrap label{font-size:11px;color:var(--text-sub);font-weight:600;}
+  #dateLabelInput{
+    background:var(--dark);color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;
+    border:none;text-align:right;min-width:220px;
+  }
+
+  .edit-banner{
+    background:#fff4d6;border:1px solid #f0d488;color:#7a5b00;border-radius:8px;
+    padding:10px 14px;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  }
+  .edit-banner button{
+    background:var(--dark);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:600;
+  }
+  .edit-banner button.secondary{background:#fff;color:var(--dark);border:1px solid var(--dark);}
+  .btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:20px;}
+  .control-group{display:flex;flex-direction:column;gap:4px;}
+  .control-group label{font-size:11px;color:var(--text-sub);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  select, input[type="text"]{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;color:var(--text-main);min-width:150px;}
+  select:focus, input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .period-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .period-toggle button{border:none;background:#fff;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--text-sub);font-weight:600;}
+  .period-toggle button.active{background:var(--dark);color:#fff;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px;}
+  .card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .card .label{font-size:12px;color:var(--text-sub);margin-bottom:6px;}
+  .card .value{font-size:22px;font-weight:600;}
+  .card .value.good{color:var(--good);}
+  .card .value.bad{color:var(--bad);}
+
+  .section{margin-bottom:30px;}
+  .section h2{font-size:15px;font-weight:600;margin:0 0 10px;padding-left:10px;border-left:4px solid var(--accent);display:flex;align-items:center;gap:8px;}
+  .table-scroll{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card-bg);}
+  thead th{background:var(--dark);color:#fff;text-align:left;padding:10px 12px;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:2;cursor:pointer;user-select:none;}
+  thead th.num, td.num{text-align:right;}
+  thead th:hover{background:var(--dark-2);}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{background:#ffffff;}
+  tbody tr:nth-child(even){background:#f8fafc;}
+  tbody tr.total-row{background:#eef1f6;font-weight:700;}
+  tbody tr:hover{background:#eef4ff;}
+  .pct{padding:2px 7px;border-radius:10px;font-weight:600;font-size:12px;display:inline-block;min-width:52px;text-align:center;}
+  .pct.good{background:#e3f5ec;color:var(--good);}
+  .pct.warn{background:#fdf1e2;color:var(--warn);}
+  .pct.bad{background:#fbe9e9;color:var(--bad);}
+  .shop-wrap{max-height:560px;overflow-y:auto;}
+  .foot-note{font-size:12px;color:var(--text-sub);margin-top:8px;}
+  .empty{padding:20px;text-align:center;color:var(--text-sub);}
+
+  input.cell-edit{
+    width:72px;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;
+    text-align:right;background:var(--edit-bg);color:var(--text-main);
+  }
+  input.cell-edit:focus{outline:2px solid var(--accent);background:#fff;}
+  .edited-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warn);margin-left:5px;vertical-align:middle;}
+  .col-hint{font-size:10.5px;color:var(--text-sub);font-weight:400;text-transform:none;}
+
+  @media (max-width: 640px){
+    .wrap{padding:14px 10px 40px;}
+    .topbar{flex-direction:column;align-items:stretch;}
+    .date-input-wrap{align-items:stretch;}
+    #dateLabelInput{text-align:left;min-width:0;width:100%;}
+    .controls{flex-direction:column;align-items:stretch;padding:12px;gap:10px;}
+    .control-group{width:100%;}
+    select, input[type="text"]{min-width:0;width:100%;font-size:13px;}
+    .period-toggle{width:100%;}
+    .period-toggle button{flex:1;}
+    .cards{grid-template-columns:repeat(2,1fr);}
+    .card .value{font-size:18px;}
+    table{font-size:12px;}
+    thead th, tbody td{padding:7px 8px;}
+    .shop-wrap{max-height:60vh;}
+    input.cell-edit{width:56px;font-size:12px;}
+    .edit-banner{flex-direction:column;align-items:stretch;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <h1>Device Attach rate GIA Dashboard</h1>
+      <div class="sub">วิเคราะห์ QTY Device และ Attach rate GIA แบบละเอียด: Regional → Area → Shop (แก้ไขข้อมูลได้)</div>
+    </div>
+    <div class="date-input-wrap">
+      <label>ป้ายกำกับข้อมูล (แก้ไขได้)</label>
+      <input id="dateLabelInput" type="text" placeholder="เช่น Data As of 20 Jul 2026">
+    </div>
+  </div>
+
+  <div class="edit-banner">
+    <div>✏️ แก้ไขค่าตัวเลขในตาราง "รายละเอียดตามสาขา" ได้โดยตรง (QTY Device, QTY GIA, Sheep, Target GIA) — ผลรวม Regional/Area และ %Attach rate จะคำนวณใหม่ให้อัตโนมัติ การแก้ไขจะไม่หายไปจนกว่าจะปิดหน้านี้</div>
+    <div class="btn-group">
+      <button class="secondary" id="btnReset">↺ รีเซ็ตข้อมูลเดิม</button>
+      <button id="btnExport">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>ช่วงข้อมูล</label>
+      <div class="period-toggle">
+        <button id="btnMtd" class="active">MTD</button>
+        <button id="btnDay">Day</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>Region</label>
+      <select id="regionSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="control-group">
+      <label>Area</label>
+      <select id="areaSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="control-group">
+      <label>Type Shop</label>
+      <select id="typeSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="control-group">
+      <label>Size Shop</label>
+      <select id="sizeSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="control-group" style="flex:1;min-width:180px;">
+      <label>ค้นหาสาขา</label>
+      <input type="text" id="shopSearch" placeholder="พิมพ์ชื่อสาขา...">
+    </div>
+  </div>
+
+  <div class="cards" id="cardsRow"></div>
+
+  <div class="section">
+    <h2>สรุปตาม Regional</h2>
+    <div class="table-scroll">
+      <table id="regionalTable">
+        <thead><tr>
+          <th data-key="name">Regional</th>
+          <th class="num" data-key="qd">QTY Device</th>
+          <th class="num" data-key="tg1">Target GIA 1:2</th>
+          <th class="num" data-key="qg">QTY GIA</th>
+          <th class="num" data-key="ar">%Attach rate</th>
+          <th class="num" data-key="tg">Target GIA</th>
+          <th class="num" data-key="qg1">QTY GIA1</th>
+          <th class="num" data-key="ag">% Achieve GIA</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>สรุปตาม Area</h2>
+    <div class="table-scroll">
+      <table id="areaTable">
+        <thead><tr>
+          <th data-key="name">Area</th>
+          <th class="num" data-key="qd">QTY Device</th>
+          <th class="num" data-key="tg1">Target GIA 1:2</th>
+          <th class="num" data-key="qg">QTY GIA</th>
+          <th class="num" data-key="ar">%Attach rate</th>
+          <th class="num" data-key="tg">Target GIA</th>
+          <th class="num" data-key="qg1">QTY GIA1</th>
+          <th class="num" data-key="ag">% Achieve GIA</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>รายละเอียดตามสาขา (Shop Name) <span id="shopCount" style="font-weight:400;color:var(--text-sub);font-size:12px;"></span></h2>
+    <div class="table-scroll shop-wrap">
+      <table id="shopTable">
+        <thead><tr>
+          <th data-key="name">Shop Name</th>
+          <th data-key="region">Region</th>
+          <th data-key="area">Area</th>
+          <th data-key="type">Type</th>
+          <th data-key="size">Size</th>
+          <th class="num" data-key="qd">QTY Device<div class="col-hint">แก้ไขได้</div></th>
+          <th class="num" data-key="tg1">Target GIA 1:2</th>
+          <th class="num" data-key="qg">QTY GIA<div class="col-hint">แก้ไขได้</div></th>
+          <th class="num" data-key="sheep">Sheep<div class="col-hint">แก้ไขได้</div></th>
+          <th class="num" data-key="ar">%Attach rate</th>
+          <th class="num" data-key="tg">Target GIA<div class="col-hint">แก้ไขได้</div></th>
+          <th class="num" data-key="qg1">QTY GIA1</th>
+          <th class="num" data-key="ag">% Achieve GIA</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="foot-note">คลิกหัวคอลัมน์เพื่อเรียงลำดับ | ช่องพื้นเหลืองอ่อนคือช่องที่แก้ไขค่าได้ | Target GIA 1:2 และ QTY GIA1 คำนวณอัตโนมัติจากค่าที่แก้ไข</div>
+  </div>
+
+</div>
+<script id="dashboard-data" type="application/json">
+{"mtd":{"shop":[{"id":0,"name":"True Shop Central Ladprao","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":344,"qg":407,"sheep":41,"tg":820},{"id":1,"name":"True Shop The Mall Ngamwongwan 3Fl.","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":289,"qg":270,"sheep":21,"tg":546},{"id":2,"name":"True Shop Central Chaengwattana","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":189,"qg":230,"sheep":25,"tg":431},{"id":3,"name":"True Shop Central West Gate","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":420,"qg":524,"sheep":47,"tg":898},{"id":4,"name":"True Shop Central North Ville","type":"Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":192,"qg":219,"sheep":21,"tg":292},{"id":5,"name":"True Shop Robinson Srisaman","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":243,"qg":266,"sheep":37,"tg":431},{"id":6,"name":"True Shop Central Westville","type":"Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":103,"qg":115,"sheep":8,"tg":242},{"id":7,"name":"True Shop Central West Gate (D)","type":"Hall","area":"BMA I - North West","size":"L","region":"BMA","qd":128,"qg":61,"sheep":0,"tg":47},{"id":8,"name":"True Shop Central Plaza Chaengwattana (D)","type":"Hall","area":"BMA I - North West","size":"L","region":"BMA","qd":83,"qg":55,"sheep":1,"tg":47},{"id":9,"name":"True Shop Big C Sukhaphiban 5 (D)","type":"COCO","area":"BMA I - North West","size":"S","region":"BMA","qd":27,"qg":2,"sheep":0,"tg":20},{"id":10,"name":"True Shop Lotus's Nakhon In","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":30,"qg":22,"sheep":0,"tg":60},{"id":11,"name":"True Shop Wongsawang Town Center","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":95,"qg":89,"sheep":6,"tg":148},{"id":12,"name":"True Shop Big C Sukhapibal 5","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":15,"qg":5,"sheep":0,"tg":62},{"id":13,"name":"True Shop Big C Sainoi Nonthaburi","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":21,"qg":8,"sheep":0,"tg":59},{"id":14,"name":"True Shop Gateway Bangsue","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":9,"qg":3,"sheep":0,"tg":62},{"id":15,"name":"True Shop Central Plaza Ramindra 1FL.","type":"Non Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":94,"qg":62,"sheep":19,"tg":130},{"id":16,"name":"True Shop Big C Chaengwattana","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":61,"qg":22,"sheep":0,"tg":103},{"id":17,"name":"True Shop Robinson Ratchapruek","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":55,"qg":31,"sheep":12,"tg":101},{"id":18,"name":"True Shop Chaeng Watthana Government Complex","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":11,"qg":5,"sheep":0,"tg":62},{"id":19,"name":"True Shop The Mall Thapra","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":147,"qg":112,"sheep":13,"tg":183},{"id":20,"name":"True Shop The Mall Bangkae 2Fl.","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":410,"qg":465,"sheep":27,"tg":1166},{"id":21,"name":"True Shop Central Rama 2","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":382,"qg":404,"sheep":26,"tg":751},{"id":22,"name":"True Shop Central Pinklao 3Fl.","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":416,"qg":415,"sheep":26,"tg":1041},{"id":23,"name":"True Shop Seacon Bangkae","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":205,"qg":120,"sheep":39,"tg":224},{"id":24,"name":"True Shop Seacon Bangkae (D)","type":"COCO","area":"BMA II - South West","size":"M","region":"BMA","qd":38,"qg":15,"sheep":0,"tg":20},{"id":25,"name":"True Shop Central Rama 2 (H)","type":"Non Matching","area":"BMA II - South West","size":"M","region":"BMA","qd":64,"qg":11,"sheep":0,"tg":80},{"id":26,"name":"True Shop Lotus's Bangpakok","type":"Non Matching","area":"BMA II - South West","size":"S","region":"BMA","qd":23,"qg":7,"sheep":0,"tg":37},{"id":27,"name":"True Shop Fashion Island","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":494,"qg":466,"sheep":25,"tg":1037},{"id":28,"name":"True Shop Future Park Rangsit","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":530,"qg":381,"sheep":3,"tg":756},{"id":29,"name":"True Shop Future Park Rangsit (H)","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":269,"qg":128,"sheep":17,"tg":276},{"id":30,"name":"True Shop Fashion Island (D)","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":264,"qg":78,"sheep":0,"tg":47},{"id":31,"name":"True Shop Future Park Rangsit (2 nd.) (D) ","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":139,"qg":45,"sheep":2,"tg":47},{"id":32,"name":"True Shop Future Park Rangsit (G Fl.) (D)","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":130,"qg":47,"sheep":13,"tg":47},{"id":33,"name":"True Shop Lotus's Sukhapibal 3","type":"Non Matching","area":"BMA III - North East","size":"M","region":"BMA","qd":84,"qg":47,"sheep":0,"tg":116},{"id":34,"name":"True Shop iPlace Latkrabang","type":"Non Matching","area":"BMA III - North East","size":"S","region":"BMA","qd":32,"qg":28,"sheep":0,"tg":89},{"id":35,"name":"True Shop The Mall Bangkapi","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":419,"qg":342,"sheep":49,"tg":714},{"id":36,"name":"True Shop Mega Bangna","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":488,"qg":472,"sheep":68,"tg":916},{"id":37,"name":"True Shop Seacon Square 2","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":371,"qg":243,"sheep":34,"tg":647},{"id":38,"name":"True Shop Mega Bangna (D)","type":"Hall","area":"BMA IV - South East","size":"L","region":"BMA","qd":82,"qg":38,"sheep":5,"tg":47},{"id":39,"name":"True Shop Lotus's Phatthanakan","type":"Non Matching","area":"BMA IV - South East","size":"S","region":"BMA","qd":39,"qg":11,"sheep":0,"tg":52},{"id":40,"name":"True Shop Paradise Park Srinakarin","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":59,"qg":45,"sheep":10,"tg":142},{"id":41,"name":"True Shop Imperial World Samrong","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":242,"qg":89,"sheep":11,"tg":192},{"id":42,"name":"True Shop Lotus's Bangna-trad","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":88,"qg":73,"sheep":11,"tg":162},{"id":43,"name":"True Shop Terminal 21","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":37,"qg":21,"sheep":0,"tg":112},{"id":44,"name":"True Shop Central Rama 9","type":"Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":277,"qg":297,"sheep":55,"tg":158},{"id":45,"name":"True Shop Central World 4Fl.","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":303,"qg":391,"sheep":17,"tg":913},{"id":46,"name":"True Shop Central Rama 3","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":145,"qg":134,"sheep":9,"tg":465},{"id":47,"name":"True Shop Central Festival East Ville","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":151,"qg":164,"sheep":17,"tg":401},{"id":48,"name":"True Shop Emquartier","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":80,"qg":69,"sheep":9,"tg":211},{"id":49,"name":"True Shop Supreme Complex (D)","type":"COCO","area":"BMA V - Central","size":"S","region":"BMA","qd":40,"qg":10,"sheep":0,"tg":20},{"id":50,"name":"True Shop Fortune Town 1Fl.","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":21,"qg":14,"sheep":0,"tg":82},{"id":51,"name":"True Shop Station Lotus's Rama 4","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":11,"qg":4,"sheep":0,"tg":48},{"id":52,"name":"True Shop Mahboon Krong 4Fl.","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":60,"qg":54,"sheep":0,"tg":93},{"id":53,"name":"True Shop U Chu Liang Building","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":3,"qg":6,"sheep":0,"tg":39},{"id":54,"name":"True Shop Silom Complex","type":"Non Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":76,"qg":111,"sheep":28,"tg":207},{"id":55,"name":"True Shop at Chamchuri Square 1","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":33,"qg":28,"sheep":0,"tg":103},{"id":56,"name":"Kiosk Lotus's Ramindra","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":22,"qg":9,"sheep":0,"tg":98},{"id":57,"name":"True Shop Makro Sri Ayutthaya","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":24,"qg":17,"sheep":0,"tg":62},{"id":58,"name":"True Shop Central Festival Chiangmai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":195,"qg":195,"sheep":10,"tg":483},{"id":59,"name":"True Shop Central Chiangrai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":151,"qg":145,"sheep":16,"tg":287},{"id":60,"name":"True Shop Central Airport Plaza Chiangmai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":172,"qg":140,"sheep":9,"tg":353},{"id":61,"name":"True Shop Central Lampang","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":86,"qg":106,"sheep":12,"tg":189},{"id":62,"name":"True Shop Lotus's Fang Chiangmai (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":21,"qg":18,"sheep":0,"tg":20},{"id":63,"name":"True Shop Lotus's Chom Thong (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":30,"qg":22,"sheep":0,"tg":20},{"id":64,"name":"True Shop Lotus's Ruam Choke (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":22,"qg":15,"sheep":0,"tg":20},{"id":65,"name":"True Shop Lotus's Fang Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":43,"qg":31,"sheep":5,"tg":119},{"id":66,"name":"True Shop Lotus's Ruamchok Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":43,"qg":31,"sheep":3,"tg":99},{"id":67,"name":"True Shop Lotus's Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":41,"qg":17,"sheep":0,"tg":69},{"id":68,"name":"True Shop Lotus's Chiangkham Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":15,"qg":11,"sheep":0,"tg":54},{"id":69,"name":"True Shop Lotus's Jomthong Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":22,"qg":16,"sheep":0,"tg":56},{"id":70,"name":"True Shop Mini Mueang Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":10,"qg":10,"sheep":0,"tg":26},{"id":71,"name":"True Shop Mini Mae Sai ChiangRai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":13,"qg":14,"sheep":0,"tg":69},{"id":72,"name":"True Shop Mini Mueang Maehongson","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":8,"qg":12,"sheep":0,"tg":40},{"id":73,"name":"True Shop Maya Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":45,"qg":47,"sheep":13,"tg":138},{"id":74,"name":"True Shop Big C Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":64,"qg":29,"sheep":0,"tg":156},{"id":75,"name":"True Shop Central Phitsanulok","type":"Matching","area":"UPC - Lower North","size":"L","region":"UPC I","qd":133,"qg":111,"sheep":15,"tg":350},{"id":76,"name":"True Shop Central Plaza Phitsanulok (D)","type":"Hall","area":"UPC - Lower North","size":"L","region":"UPC I","qd":92,"qg":65,"sheep":0,"tg":47},{"id":77,"name":"True Shop Lotus's Pitsanulok (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":24,"qg":7,"sheep":0,"tg":20},{"id":78,"name":"True Shop Lotus's Lomsak (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":21,"qg":15,"sheep":0,"tg":20},{"id":79,"name":"True Shop Robinson Mae Sot (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":20,"qg":12,"sheep":0,"tg":20},{"id":80,"name":"True Shop Salokbat Kamphaengphet (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":27,"qg":8,"sheep":0,"tg":20},{"id":81,"name":"True Shop Lotus's Thaluang Phichit","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":58,"qg":37,"sheep":5,"tg":185},{"id":82,"name":"True Shop Mini Lomsak Phetchabun","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":38,"qg":27,"sheep":4,"tg":91},{"id":83,"name":"True Shop Taphan Hin Phichit","type":"Non Matching","area":"UPC - Lower North","size":"S","region":"UPC I","qd":21,"qg":17,"sheep":0,"tg":99},{"id":84,"name":"True Shop Robinson Mae Sot","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":34,"qg":29,"sheep":8,"tg":139},{"id":85,"name":"True Shop Robinson Khamphaengphet","type":"Non Matching","area":"UPC - Lower North","size":"S","region":"UPC I","qd":29,"qg":58,"sheep":0,"tg":92},{"id":86,"name":"True Shop Central Ubonratchathani","type":"Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":170,"qg":226,"sheep":23,"tg":555},{"id":87,"name":"True Shop Robinson Roi-Et","type":"Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":136,"qg":122,"sheep":21,"tg":391},{"id":88,"name":"True Shop Central Plaza Ubon Ratchathani (D)","type":"Hall","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":103,"qg":53,"sheep":13,"tg":47},{"id":89,"name":"True Shop Lotus's Muang Sam Sib (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":6,"qg":13,"sheep":0,"tg":20},{"id":90,"name":"True Shop Big C Phibun Mangsahan (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":19,"qg":17,"sheep":0,"tg":20},{"id":91,"name":"True Shop Lotus's Ubon Ratchathani (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":13,"qg":16,"sheep":0,"tg":20},{"id":92,"name":"True Shop Lotus's Talad Khunhan (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":11,"qg":17,"sheep":0,"tg":20},{"id":93,"name":"True Shop Lotus's Trakan Phuet Phon (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":9,"qg":12,"sheep":0,"tg":20},{"id":94,"name":"True Shop Lotus's Kantharalak (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":10,"qg":9,"sheep":0,"tg":20},{"id":95,"name":"True Shop Lotus's Det Udom (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":41,"qg":35,"sheep":0,"tg":20},{"id":96,"name":"True Shop Lotus's Chiangyuen Mahasarakham","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":17,"qg":10,"sheep":0,"tg":52},{"id":97,"name":"True Shop Lotus's Yasothon ","type":"Non Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":109,"qg":111,"sheep":0,"tg":282},{"id":98,"name":"True Shop Lotus's Phonthong Roiet","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":32,"qg":30,"sheep":0,"tg":99},{"id":99,"name":"True Shop Lotus's Phibunmangsahan Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":42,"qg":16,"sheep":0,"tg":55},{"id":100,"name":"True Shop Lotus's Trakan Phuet Phon Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":40,"qg":32,"sheep":0,"tg":72},{"id":101,"name":"True Shop Lotus's Borabue Mahasarakham","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":11,"qg":8,"sheep":0,"tg":50},{"id":102,"name":"True Shop Lotus's Det Udom Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":76,"qg":49,"sheep":0,"tg":96},{"id":103,"name":"True Shop Mini Senangkhanikhom Amnatcharoen","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":6,"qg":7,"sheep":0,"tg":46},{"id":104,"name":"True Shop Khamcha-I Mukdahan","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":11,"qg":9,"sheep":0,"tg":52},{"id":105,"name":"True Shop Kasetwisai Roiet","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":16,"qg":15,"sheep":0,"tg":60},{"id":106,"name":"True Shop Buntharik Ubonratchathan","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":8,"qg":9,"sheep":0,"tg":68},{"id":107,"name":"True Shop Lotus's Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":13,"qg":15,"sheep":0,"tg":70},{"id":108,"name":"True Shop Robinson Mukdahan","type":"Non Matching","area":"UPC - Central Northeast","size":"M","region":"UPC I","qd":95,"qg":91,"sheep":1,"tg":295},{"id":109,"name":"True Shop Central Khonkaen","type":"Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":220,"qg":404,"sheep":29,"tg":666},{"id":110,"name":"True Shop Central Plaza Udonthani","type":"Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":283,"qg":285,"sheep":13,"tg":558},{"id":111,"name":"True Shop Central Udon Thani (D)","type":"Hall","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":92,"qg":63,"sheep":12,"tg":47},{"id":112,"name":"True Shop Central Plaza Khon Kaen (D)","type":"Hall","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":135,"qg":79,"sheep":13,"tg":47},{"id":113,"name":"True Shop Lotus's Banphue (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":29,"qg":13,"sheep":0,"tg":20},{"id":114,"name":"True Shop Big C Kranuan (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":8,"qg":5,"sheep":0,"tg":20},{"id":115,"name":"True Shop Assawan Phonpisai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":25,"qg":10,"sheep":0,"tg":20},{"id":116,"name":"True Shop Big C Loei (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":27,"qg":22,"sheep":0,"tg":20},{"id":117,"name":"True Shop Lotus's Nong Ruea (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":29,"qg":26,"sheep":0,"tg":20},{"id":118,"name":"True Shop Lotus's Sawandandin (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":13,"qg":9,"sheep":0,"tg":20},{"id":119,"name":"True Shop Lotus's Nakhon Phanom (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":18,"qg":23,"sheep":0,"tg":20},{"id":120,"name":"True Shop Big C Nong Khai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":23,"qg":11,"sheep":0,"tg":20},{"id":121,"name":"True Shop Big Chiang Nongkhai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":25,"qg":13,"sheep":0,"tg":20},{"id":122,"name":"True Shop Regional Office Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":12,"qg":6,"sheep":0,"tg":34},{"id":123,"name":"True Shop Lotus's Kalasin","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":25,"qg":5,"sheep":0,"tg":54},{"id":124,"name":"True Shop Lotus's Nongbualamphu","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":53,"qg":44,"sheep":6,"tg":154},{"id":125,"name":"True Shop Lotus's Nakhonphanom","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":73,"qg":88,"sheep":0,"tg":181},{"id":126,"name":"True Shop Lotus's Buengkan","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":36,"qg":27,"sheep":0,"tg":71},{"id":127,"name":"True Shop Lotus's Somdet Kalasin","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":21,"qg":13,"sheep":0,"tg":57},{"id":128,"name":"True Shop Lotus's Phon Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":54,"qg":35,"sheep":0,"tg":107},{"id":129,"name":"True Shop Lotus's Banphue Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":32,"qg":40,"sheep":0,"tg":93},{"id":130,"name":"True Shop Lotus's Nongruea  Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":25,"qg":23,"sheep":0,"tg":83},{"id":131,"name":"True Shop Wangsaphung Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":25,"qg":22,"sheep":0,"tg":65},{"id":132,"name":"True Shop Mueang Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":38,"qg":28,"sheep":0,"tg":59},{"id":133,"name":"True Shop Big C Banphai Khon Kaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":32,"qg":11,"sheep":0,"tg":78},{"id":134,"name":"True Shop Big C Bandung Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":46,"qg":63,"sheep":7,"tg":99},{"id":135,"name":"True Shop Big C Khonkaen 2","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":13,"qg":9,"sheep":0,"tg":52},{"id":136,"name":"True Shop Big C Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":94,"qg":51,"sheep":0,"tg":200},{"id":137,"name":"True Shop Big C Phangkhon Sakonnakhon","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":16,"qg":14,"sheep":0,"tg":46},{"id":138,"name":"True Shop Big C Khamtakla Sakonnakhon","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":12,"qg":5,"sheep":0,"tg":47},{"id":139,"name":"True Shop Asawann Phonphisai Nong Khai ","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":42,"qg":24,"sheep":0,"tg":69},{"id":140,"name":"True Shop Asawann Shopping Complex Nongkhai","type":"Non Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":68,"qg":73,"sheep":6,"tg":175},{"id":141,"name":"True Shop UD Town Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":19,"qg":21,"sheep":0,"tg":61},{"id":142,"name":"True Shop The Mall Nakhonratchasima 3Fl.","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":180,"qg":212,"sheep":15,"tg":546},{"id":143,"name":"True Shop Central Plaza Nakhonratchasima","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":176,"qg":197,"sheep":21,"tg":367},{"id":144,"name":"True Shop Robinson Buriram","type":"Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":98,"qg":87,"sheep":7,"tg":196},{"id":145,"name":"True Shop Robinson Chaiyaphum","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":69,"qg":68,"sheep":5,"tg":233},{"id":146,"name":"True Shop The Mall Korat (D)","type":"Hall","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":85,"qg":35,"sheep":6,"tg":47},{"id":147,"name":"True Shop Lotus's Pakthongchai (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":8,"qg":13,"sheep":0,"tg":20},{"id":148,"name":"True Shop Robinson Chaiyaphum (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":13,"qg":12,"sheep":0,"tg":20},{"id":149,"name":"True Shop Lotus's Bua Yai (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":6,"qg":7,"sheep":0,"tg":20},{"id":150,"name":"True Shop Lotus's Phimai Nakhon (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":14,"qg":11,"sheep":0,"tg":20},{"id":151,"name":"True Shop Lotus's Sangkha (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":14,"qg":12,"sheep":0,"tg":20},{"id":152,"name":"True Shop Big C Korat 2 (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":10,"qg":5,"sheep":0,"tg":20},{"id":153,"name":"True Shop Lotus's Prasat (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":10,"qg":18,"sheep":0,"tg":20},{"id":154,"name":"True Shop Lotus's Buayai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":39,"qg":32,"sheep":0,"tg":108},{"id":155,"name":"True Shop Lotus's Sungkha Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":24,"qg":35,"sheep":0,"tg":119},{"id":156,"name":"True Shop Lotus's Prasat Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":25,"qg":34,"sheep":0,"tg":119},{"id":157,"name":"True Shop Lotus's Thatum Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":17,"qg":34,"sheep":0,"tg":87},{"id":158,"name":"True Shop Lotus's Kaengkhro Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":78,"qg":77,"sheep":0,"tg":171},{"id":159,"name":"True Shop Lotus's Phimai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":67,"qg":64,"sheep":0,"tg":171},{"id":160,"name":"True Shop Lotus's JorHor Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":24,"qg":26,"sheep":0,"tg":70},{"id":161,"name":"True Shop Lotus's Prakonchai Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":48,"qg":71,"sheep":0,"tg":166},{"id":162,"name":"True Shop Lotus's Lamplaimat Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":36,"qg":27,"sheep":0,"tg":71},{"id":163,"name":"True Shop Lotus's Satuek Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":47,"qg":35,"sheep":0,"tg":111},{"id":164,"name":"True Shop Lotus's Nonthai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":21,"qg":34,"sheep":0,"tg":74},{"id":165,"name":"True Shop Terminal 21 Korat","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":60,"qg":74,"sheep":5,"tg":133},{"id":166,"name":"True Shop Kaset Sombun Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":22,"qg":25,"sheep":0,"tg":75},{"id":167,"name":"True Shop Nongbunmak Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":24,"qg":51,"sheep":0,"tg":92},{"id":168,"name":"True Shop Sikhoraphum Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":20,"qg":17,"sheep":0,"tg":75},{"id":169,"name":"True Shop Pakthongchai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":20,"qg":25,"sheep":0,"tg":53},{"id":170,"name":"True Shop Huai Thalaeng Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":13,"qg":6,"sheep":0,"tg":52},{"id":171,"name":"True Shop Dan Khun Thot Nakhonratchasima ","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":21,"qg":13,"sheep":0,"tg":66},{"id":172,"name":"True Shop Khon Buri Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":23,"qg":24,"sheep":0,"tg":66},{"id":173,"name":"True Shop Soeng Sang Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":18,"qg":19,"sheep":0,"tg":60},{"id":174,"name":"True Shop Chatturat Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":11,"qg":15,"sheep":0,"tg":60},{"id":175,"name":"True Shop Kao Yai Market Village","type":"Non Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":157,"qg":150,"sheep":9,"tg":362},{"id":176,"name":"True Shop Chumphuang Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":29,"qg":20,"sheep":0,"tg":83},{"id":177,"name":"True Shop Big C Korat 2","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":24,"qg":23,"sheep":0,"tg":89},{"id":178,"name":"True Shop Big C Nongki Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":44,"qg":38,"sheep":0,"tg":123},{"id":179,"name":"True Shop Down Town Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":15,"qg":25,"sheep":0,"tg":45},{"id":180,"name":"True Shop Big C Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":6,"qg":14,"sheep":0,"tg":57},{"id":181,"name":"True Shop Central Festival Pattaya Beach","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":198,"qg":402,"sheep":29,"tg":639},{"id":182,"name":"True Shop Central Plaza Rayong","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":262,"qg":258,"sheep":29,"tg":415},{"id":183,"name":"True Shop Central Chonburi","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":257,"qg":273,"sheep":28,"tg":564},{"id":184,"name":"True shop Central Plaza Si Racha","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":114,"qg":121,"sheep":34,"tg":229},{"id":185,"name":"True Shop Central Chanthaburi","type":"Matching","area":"UPC - East","size":"M","region":"UPC II","qd":105,"qg":116,"sheep":75,"tg":337},{"id":186,"name":"True Shop Central Rayong (D)","type":"Hall","area":"UPC - East","size":"L","region":"UPC II","qd":239,"qg":48,"sheep":6,"tg":47},{"id":187,"name":"True Shop Central Festival Pattaya (D)","type":"Hall","area":"UPC - East","size":"L","region":"UPC II","qd":83,"qg":11,"sheep":5,"tg":47},{"id":188,"name":"True Shop Terminal 21 Pattaya","type":"Non Matching","area":"UPC - East","size":"L","region":"UPC II","qd":162,"qg":182,"sheep":26,"tg":461},{"id":189,"name":"True Shop Trad","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":24,"qg":19,"sheep":0,"tg":87},{"id":190,"name":"True Shop Chonburi","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":29,"qg":25,"sheep":0,"tg":52},{"id":191,"name":"True Shop South Pattaya","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":29,"qg":26,"sheep":0,"tg":72},{"id":192,"name":"True Shop Central Plaza Mahachai","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":251,"qg":199,"sheep":44,"tg":491},{"id":193,"name":"True Shop Central Plaza Salaya","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":185,"qg":136,"sheep":27,"tg":335},{"id":194,"name":"True Shop Central Nakhonpathom","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":174,"qg":193,"sheep":23,"tg":373},{"id":195,"name":"True Shop Central Plaza Mahachai (D)","type":"Hall","area":"UPC - West","size":"L","region":"UPC II","qd":100,"qg":49,"sheep":6,"tg":47},{"id":196,"name":"True Shop Central Salaya (D)","type":"Hall","area":"UPC - West","size":"L","region":"UPC II","qd":107,"qg":36,"sheep":6,"tg":47},{"id":197,"name":"True Shop Lotus's Sam Chuk (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":29,"qg":10,"sheep":0,"tg":20},{"id":198,"name":"True Shop Lotus's Pran Buri (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":15,"qg":6,"sheep":0,"tg":20},{"id":199,"name":"True Shop Lotus's Amphur U-Thong (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":27,"qg":25,"sheep":0,"tg":20},{"id":200,"name":"True Shop Hua Hin","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":9,"qg":4,"sheep":0,"tg":41},{"id":201,"name":"True Shop Lotus's Nakhonpathom","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":8,"qg":3,"sheep":0,"tg":59},{"id":202,"name":"True Shop Lotus's Sampran Nakhonpathom","type":"Non Matching","area":"UPC - West","size":"M","region":"UPC II","qd":34,"qg":20,"sheep":0,"tg":62},{"id":203,"name":"True Shop Lotus's U-Thong Suphanburi","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":19,"qg":15,"sheep":0,"tg":75},{"id":204,"name":"True Shop Lotus's Samchuk Suphanburi","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":41,"qg":12,"sheep":0,"tg":69},{"id":205,"name":"True Shop Station Lotus's Pranburi Prachuapkhirikhan","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":6,"qg":8,"sheep":0,"tg":32},{"id":206,"name":"True Shop Robinson Kanchanaburi","type":"Non Matching","area":"UPC - West","size":"L","region":"UPC II","qd":135,"qg":86,"sheep":16,"tg":193},{"id":207,"name":"True Shop Ayudhaya Park","type":"Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":209,"qg":213,"sheep":23,"tg":403},{"id":208,"name":"True Shop Robinson Lopburi","type":"Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":81,"qg":84,"sheep":7,"tg":215},{"id":209,"name":"True shop Central Ayutthaya","type":"Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":116,"qg":129,"sheep":27,"tg":222},{"id":210,"name":"True Shop Central Nakhonsawan","type":"Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":107,"qg":80,"sheep":12,"tg":263},{"id":211,"name":"True Shop Ayutthaya (D)","type":"Hall","area":"UPC - Central","size":"L","region":"UPC II","qd":158,"qg":95,"sheep":9,"tg":47},{"id":212,"name":"True Shop Lotus's Bang Pa-In Ayudhaya","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":9,"qg":10,"sheep":0,"tg":41},{"id":213,"name":"True Shop The Walk Nakornsawan","type":"Non Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":73,"qg":38,"sheep":10,"tg":123},{"id":214,"name":"True Shop Lotus's Khok Samrong Lopburi","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":23,"qg":10,"sheep":0,"tg":47},{"id":215,"name":"True Move Shop Taweekit Complex Saraburi","type":"Non Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":98,"qg":87,"sheep":8,"tg":216},{"id":216,"name":"True Shop Uthaithani","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":20,"qg":15,"sheep":0,"tg":48},{"id":217,"name":"True Shop Big C Nongbua Nakhonsawan","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":27,"qg":13,"sheep":0,"tg":57},{"id":218,"name":"True Shop Lotus's Keangkoi Saraburi","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":20,"qg":13,"sheep":0,"tg":32},{"id":219,"name":"Kiosk Lotus's Sena Ayutthaya","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":19,"qg":9,"sheep":0,"tg":41},{"id":220,"name":"True Shop Central Festival Phuket","type":"Matching","area":"UPC - Upper South","size":"L","region":"UPC II","qd":338,"qg":303,"sheep":18,"tg":706},{"id":221,"name":"True Shop Central Festival Samui Suratthani","type":"Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":61,"qg":48,"sheep":4,"tg":129},{"id":222,"name":"True Shop Central Suratthani","type":"Matching","area":"UPC - Upper South","size":"L","region":"UPC II","qd":180,"qg":178,"sheep":20,"tg":413},{"id":223,"name":"True Shop Central Krabi","type":"Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":85,"qg":92,"sheep":12,"tg":171},{"id":224,"name":"True Shop Central Festival Samui (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":25,"qg":16,"sheep":0,"tg":47},{"id":225,"name":"True Shop Central Plaza Suratthani (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":180,"qg":104,"sheep":15,"tg":47},{"id":226,"name":"True Shop Phuket (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":130,"qg":37,"sheep":2,"tg":47},{"id":227,"name":"True Shop Ocean Shopping Mall (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":33,"qg":13,"sheep":0,"tg":20},{"id":228,"name":"True Shop Big C Ranong (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":46,"qg":21,"sheep":0,"tg":20},{"id":229,"name":"True Shop Lotus's Chaiya (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":22,"qg":17,"sheep":0,"tg":20},{"id":230,"name":"True Shop Lotus's Ranong","type":"Non Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":72,"qg":39,"sheep":48,"tg":133},{"id":231,"name":"True Shop  Ocean Complex Chumphon","type":"Non Matching","area":"UPC - Upper South","size":"S","region":"UPC II","qd":29,"qg":16,"sheep":0,"tg":60},{"id":232,"name":"True Shop Central Plaza Nakhonsithammarat","type":"Matching","area":"UPC - Lower South","size":"L","region":"UPC II","qd":185,"qg":222,"sheep":12,"tg":350},{"id":233,"name":"True Shop Central Festival Hadyai Songkhla","type":"Matching","area":"UPC - Lower South","size":"L","region":"UPC II","qd":144,"qg":176,"sheep":23,"tg":469},{"id":234,"name":"True Shop Central Nakorn Sithammarat (D)","type":"Hall","area":"UPC - Lower South","size":"L","region":"UPC II","qd":63,"qg":45,"sheep":21,"tg":47},{"id":235,"name":"True Shop Central Festival Hat Yai (D)","type":"Hall","area":"UPC - Lower South","size":"L","region":"UPC II","qd":102,"qg":86,"sheep":10,"tg":47},{"id":236,"name":"True Shop Ampur Ranot Songkhla (D)","type":"COCO","area":"UPC - Lower South","size":"S","region":"UPC II","qd":9,"qg":4,"sheep":0,"tg":20},{"id":237,"name":"True Shop Mini Mueang Satun","type":"Non Matching","area":"UPC - Lower South","size":"S","region":"UPC II","qd":12,"qg":10,"sheep":0,"tg":42}]},"day":{"shop":[{"id":0,"name":"True Shop Central Ladprao","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":12,"qg":6,"sheep":2,"tg":26.45},{"id":1,"name":"True Shop The Mall Ngamwongwan 3Fl.","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":14,"qg":15,"sheep":3,"tg":17.61},{"id":2,"name":"True Shop Central Chaengwattana","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":5,"qg":4,"sheep":2,"tg":13.9},{"id":3,"name":"True Shop Central West Gate","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":17,"qg":25,"sheep":3,"tg":28.97},{"id":4,"name":"True Shop Central North Ville","type":"Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":8,"qg":6,"sheep":1,"tg":9.42},{"id":5,"name":"True Shop Robinson Srisaman","type":"Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":9,"qg":6,"sheep":3,"tg":13.9},{"id":6,"name":"True Shop Central Westville","type":"Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":3,"qg":7,"sheep":0,"tg":7.81},{"id":7,"name":"True Shop Central West Gate (D)","type":"Hall","area":"BMA I - North West","size":"L","region":"BMA","qd":7,"qg":5,"sheep":0,"tg":1.52},{"id":8,"name":"True Shop Central Plaza Chaengwattana (D)","type":"Hall","area":"BMA I - North West","size":"L","region":"BMA","qd":4,"qg":0,"sheep":0,"tg":1.52},{"id":9,"name":"True Shop Big C Sukhaphiban 5 (D)","type":"COCO","area":"BMA I - North West","size":"S","region":"BMA","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":10,"name":"True Shop Lotus's Nakhon In","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":1,"qg":0,"sheep":0,"tg":1.94},{"id":11,"name":"True Shop Wongsawang Town Center","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":5,"qg":4,"sheep":0,"tg":4.77},{"id":12,"name":"True Shop Big C Sukhapibal 5","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":2},{"id":13,"name":"True Shop Big C Sainoi Nonthaburi","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":1,"qg":0,"sheep":0,"tg":1.9},{"id":14,"name":"True Shop Gateway Bangsue","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":2},{"id":15,"name":"True Shop Central Plaza Ramindra 1FL.","type":"Non Matching","area":"BMA I - North West","size":"L","region":"BMA","qd":2,"qg":2,"sheep":2,"tg":4.19},{"id":16,"name":"True Shop Big C Chaengwattana","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":3,"qg":0,"sheep":0,"tg":3.32},{"id":17,"name":"True Shop Robinson Ratchapruek","type":"Non Matching","area":"BMA I - North West","size":"M","region":"BMA","qd":1,"qg":2,"sheep":1,"tg":3.26},{"id":18,"name":"True Shop Chaeng Watthana Government Complex","type":"Non Matching","area":"BMA I - North West","size":"S","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":2},{"id":19,"name":"True Shop The Mall Thapra","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":5,"qg":2,"sheep":0,"tg":5.9},{"id":20,"name":"True Shop The Mall Bangkae 2Fl.","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":18,"qg":26,"sheep":0,"tg":37.61},{"id":21,"name":"True Shop Central Rama 2","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":14,"qg":10,"sheep":5,"tg":24.23},{"id":22,"name":"True Shop Central Pinklao 3Fl.","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":20,"qg":24,"sheep":1,"tg":33.58},{"id":23,"name":"True Shop Seacon Bangkae","type":"Matching","area":"BMA II - South West","size":"L","region":"BMA","qd":6,"qg":4,"sheep":4,"tg":7.23},{"id":24,"name":"True Shop Seacon Bangkae (D)","type":"COCO","area":"BMA II - South West","size":"M","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":25,"name":"True Shop Central Rama 2 (H)","type":"Non Matching","area":"BMA II - South West","size":"M","region":"BMA","qd":1,"qg":0,"sheep":0,"tg":2.58},{"id":26,"name":"True Shop Lotus's Bangpakok","type":"Non Matching","area":"BMA II - South West","size":"S","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":1.19},{"id":27,"name":"True Shop Fashion Island","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":13,"qg":11,"sheep":1,"tg":33.45},{"id":28,"name":"True Shop Future Park Rangsit","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":22,"qg":22,"sheep":0,"tg":24.39},{"id":29,"name":"True Shop Future Park Rangsit (H)","type":"Matching","area":"BMA III - North East","size":"L","region":"BMA","qd":9,"qg":1,"sheep":0,"tg":8.9},{"id":30,"name":"True Shop Fashion Island (D)","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":13,"qg":7,"sheep":0,"tg":1.52},{"id":31,"name":"True Shop Future Park Rangsit (2 nd.) (D) ","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":6,"qg":3,"sheep":0,"tg":1.52},{"id":32,"name":"True Shop Future Park Rangsit (G Fl.) (D)","type":"Hall","area":"BMA III - North East","size":"L","region":"BMA","qd":7,"qg":2,"sheep":0,"tg":1.52},{"id":33,"name":"True Shop Lotus's Sukhapibal 3","type":"Non Matching","area":"BMA III - North East","size":"M","region":"BMA","qd":7,"qg":4,"sheep":0,"tg":3.74},{"id":34,"name":"True Shop iPlace Latkrabang","type":"Non Matching","area":"BMA III - North East","size":"S","region":"BMA","qd":0,"qg":3,"sheep":0,"tg":2.87},{"id":35,"name":"True Shop The Mall Bangkapi","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":13,"qg":16,"sheep":5,"tg":23.03},{"id":36,"name":"True Shop Mega Bangna","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":23,"qg":8,"sheep":6,"tg":29.55},{"id":37,"name":"True Shop Seacon Square 2","type":"Matching","area":"BMA IV - South East","size":"L","region":"BMA","qd":10,"qg":4,"sheep":4,"tg":20.87},{"id":38,"name":"True Shop Mega Bangna (D)","type":"Hall","area":"BMA IV - South East","size":"L","region":"BMA","qd":2,"qg":0,"sheep":0,"tg":1.52},{"id":39,"name":"True Shop Lotus's Phatthanakan","type":"Non Matching","area":"BMA IV - South East","size":"S","region":"BMA","qd":3,"qg":0,"sheep":0,"tg":1.68},{"id":40,"name":"True Shop Paradise Park Srinakarin","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":3,"qg":2,"sheep":2,"tg":4.58},{"id":41,"name":"True Shop Imperial World Samrong","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":6,"qg":4,"sheep":1,"tg":6.19},{"id":42,"name":"True Shop Lotus's Bangna-trad","type":"Non Matching","area":"BMA IV - South East","size":"M","region":"BMA","qd":4,"qg":5,"sheep":2,"tg":5.23},{"id":43,"name":"True Shop Terminal 21","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":3,"qg":1,"sheep":0,"tg":3.61},{"id":44,"name":"True Shop Central Rama 9","type":"Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":9,"qg":12,"sheep":1,"tg":5.1},{"id":45,"name":"True Shop Central World 4Fl.","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":10,"qg":15,"sheep":0,"tg":29.45},{"id":46,"name":"True Shop Central Rama 3","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":5,"qg":4,"sheep":1,"tg":15},{"id":47,"name":"True Shop Central Festival East Ville","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":5,"qg":5,"sheep":2,"tg":12.94},{"id":48,"name":"True Shop Emquartier","type":"Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":1,"qg":4,"sheep":0,"tg":6.81},{"id":49,"name":"True Shop Supreme Complex (D)","type":"COCO","area":"BMA V - Central","size":"S","region":"BMA","qd":5,"qg":0,"sheep":0,"tg":0.65},{"id":50,"name":"True Shop Fortune Town 1Fl.","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":1,"qg":4,"sheep":0,"tg":2.65},{"id":51,"name":"True Shop Station Lotus's Rama 4","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":1.55},{"id":52,"name":"True Shop Mahboon Krong 4Fl.","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":3,"qg":3,"sheep":0,"tg":3},{"id":53,"name":"True Shop U Chu Liang Building","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":0,"qg":2,"sheep":0,"tg":1.26},{"id":54,"name":"True Shop Silom Complex","type":"Non Matching","area":"BMA V - Central","size":"L","region":"BMA","qd":4,"qg":7,"sheep":0,"tg":6.68},{"id":55,"name":"True Shop at Chamchuri Square 1","type":"Non Matching","area":"BMA V - Central","size":"M","region":"BMA","qd":0,"qg":0,"sheep":0,"tg":3.32},{"id":56,"name":"Kiosk Lotus's Ramindra","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":1,"qg":0,"sheep":0,"tg":3.16},{"id":57,"name":"True Shop Makro Sri Ayutthaya","type":"Non Matching","area":"BMA V - Central","size":"S","region":"BMA","qd":2,"qg":0,"sheep":0,"tg":2},{"id":58,"name":"True Shop Central Festival Chiangmai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":5,"qg":2,"sheep":0,"tg":15.58},{"id":59,"name":"True Shop Central Chiangrai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":3,"qg":9,"sheep":2,"tg":9.26},{"id":60,"name":"True Shop Central Airport Plaza Chiangmai","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":6,"qg":3,"sheep":3,"tg":11.39},{"id":61,"name":"True Shop Central Lampang","type":"Matching","area":"UPC - Upper North","size":"L","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":6.1},{"id":62,"name":"True Shop Lotus's Fang Chiangmai (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":63,"name":"True Shop Lotus's Chom Thong (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":4,"qg":1,"sheep":0,"tg":0.65},{"id":64,"name":"True Shop Lotus's Ruam Choke (D)","type":"COCO","area":"UPC - Upper North","size":"S","region":"UPC I","qd":3,"qg":1,"sheep":0,"tg":0.65},{"id":65,"name":"True Shop Lotus's Fang Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":4,"qg":0,"sheep":1,"tg":3.84},{"id":66,"name":"True Shop Lotus's Ruamchok Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":8,"qg":1,"sheep":0,"tg":3.19},{"id":67,"name":"True Shop Lotus's Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.23},{"id":68,"name":"True Shop Lotus's Chiangkham Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":1,"qg":2,"sheep":0,"tg":1.74},{"id":69,"name":"True Shop Lotus's Jomthong Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.81},{"id":70,"name":"True Shop Mini Mueang Phayao","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.84},{"id":71,"name":"True Shop Mini Mae Sai ChiangRai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.23},{"id":72,"name":"True Shop Mini Mueang Maehongson","type":"Non Matching","area":"UPC - Upper North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.29},{"id":73,"name":"True Shop Maya Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":2,"qg":3,"sheep":0,"tg":4.45},{"id":74,"name":"True Shop Big C Chiangmai","type":"Non Matching","area":"UPC - Upper North","size":"M","region":"UPC I","qd":3,"qg":2,"sheep":0,"tg":5.03},{"id":75,"name":"True Shop Central Phitsanulok","type":"Matching","area":"UPC - Lower North","size":"L","region":"UPC I","qd":4,"qg":3,"sheep":0,"tg":11.29},{"id":76,"name":"True Shop Central Plaza Phitsanulok (D)","type":"Hall","area":"UPC - Lower North","size":"L","region":"UPC I","qd":3,"qg":3,"sheep":0,"tg":1.52},{"id":77,"name":"True Shop Lotus's Pitsanulok (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":78,"name":"True Shop Lotus's Lomsak (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":79,"name":"True Shop Robinson Mae Sot (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":0.65},{"id":80,"name":"True Shop Salokbat Kamphaengphet (D)","type":"COCO","area":"UPC - Lower North","size":"S","region":"UPC I","qd":3,"qg":0,"sheep":0,"tg":0.65},{"id":81,"name":"True Shop Lotus's Thaluang Phichit","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":2,"qg":1,"sheep":1,"tg":5.97},{"id":82,"name":"True Shop Mini Lomsak Phetchabun","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.94},{"id":83,"name":"True Shop Taphan Hin Phichit","type":"Non Matching","area":"UPC - Lower North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":3.19},{"id":84,"name":"True Shop Robinson Mae Sot","type":"Non Matching","area":"UPC - Lower North","size":"M","region":"UPC I","qd":1,"qg":0,"sheep":2,"tg":4.48},{"id":85,"name":"True Shop Robinson Khamphaengphet","type":"Non Matching","area":"UPC - Lower North","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.97},{"id":86,"name":"True Shop Central Ubonratchathani","type":"Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":5,"qg":8,"sheep":1,"tg":17.9},{"id":87,"name":"True Shop Robinson Roi-Et","type":"Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":13,"qg":8,"sheep":0,"tg":12.61},{"id":88,"name":"True Shop Central Plaza Ubon Ratchathani (D)","type":"Hall","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":3,"qg":3,"sheep":6,"tg":1.52},{"id":89,"name":"True Shop Lotus's Muang Sam Sib (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":0.65},{"id":90,"name":"True Shop Big C Phibun Mangsahan (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":91,"name":"True Shop Lotus's Ubon Ratchathani (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":92,"name":"True Shop Lotus's Talad Khunhan (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":0.65},{"id":93,"name":"True Shop Lotus's Trakan Phuet Phon (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":2,"qg":3,"sheep":0,"tg":0.65},{"id":94,"name":"True Shop Lotus's Kantharalak (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":95,"name":"True Shop Lotus's Det Udom (D)","type":"COCO","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":0.65},{"id":96,"name":"True Shop Lotus's Chiangyuen Mahasarakham","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":1.68},{"id":97,"name":"True Shop Lotus's Yasothon ","type":"Non Matching","area":"UPC - Central Northeast","size":"L","region":"UPC I","qd":1,"qg":3,"sheep":0,"tg":9.1},{"id":98,"name":"True Shop Lotus's Phonthong Roiet","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":3,"qg":1,"sheep":0,"tg":3.19},{"id":99,"name":"True Shop Lotus's Phibunmangsahan Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":3,"qg":0,"sheep":0,"tg":1.77},{"id":100,"name":"True Shop Lotus's Trakan Phuet Phon Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":1,"sheep":0,"tg":2.32},{"id":101,"name":"True Shop Lotus's Borabue Mahasarakham","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.61},{"id":102,"name":"True Shop Lotus's Det Udom Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":3.1},{"id":103,"name":"True Shop Mini Senangkhanikhom Amnatcharoen","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.48},{"id":104,"name":"True Shop Khamcha-I Mukdahan","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":1.68},{"id":105,"name":"True Shop Kasetwisai Roiet","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":2,"sheep":0,"tg":1.94},{"id":106,"name":"True Shop Buntharik Ubonratchathan","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.19},{"id":107,"name":"True Shop Lotus's Ubonratchathani","type":"Non Matching","area":"UPC - Central Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.26},{"id":108,"name":"True Shop Robinson Mukdahan","type":"Non Matching","area":"UPC - Central Northeast","size":"M","region":"UPC I","qd":4,"qg":4,"sheep":0,"tg":9.52},{"id":109,"name":"True Shop Central Khonkaen","type":"Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":9,"qg":9,"sheep":1,"tg":21.48},{"id":110,"name":"True Shop Central Plaza Udonthani","type":"Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":10,"qg":14,"sheep":0,"tg":18},{"id":111,"name":"True Shop Central Udon Thani (D)","type":"Hall","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":3,"qg":2,"sheep":2,"tg":1.52},{"id":112,"name":"True Shop Central Plaza Khon Kaen (D)","type":"Hall","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":3,"qg":1,"sheep":1,"tg":1.52},{"id":113,"name":"True Shop Lotus's Banphue (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":3,"qg":1,"sheep":0,"tg":0.65},{"id":114,"name":"True Shop Big C Kranuan (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":0.65},{"id":115,"name":"True Shop Assawan Phonpisai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":116,"name":"True Shop Big C Loei (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":3,"qg":2,"sheep":0,"tg":0.65},{"id":117,"name":"True Shop Lotus's Nong Ruea (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":3,"sheep":0,"tg":0.65},{"id":118,"name":"True Shop Lotus's Sawandandin (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":119,"name":"True Shop Lotus's Nakhon Phanom (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":2,"sheep":0,"tg":0.65},{"id":120,"name":"True Shop Big C Nong Khai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":0.65},{"id":121,"name":"True Shop Big Chiang Nongkhai (D)","type":"COCO","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":0.65},{"id":122,"name":"True Shop Regional Office Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.1},{"id":123,"name":"True Shop Lotus's Kalasin","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":0,"qg":3,"sheep":0,"tg":1.74},{"id":124,"name":"True Shop Lotus's Nongbualamphu","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":1,"qg":3,"sheep":0,"tg":4.97},{"id":125,"name":"True Shop Lotus's Nakhonphanom","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":6,"qg":5,"sheep":0,"tg":5.84},{"id":126,"name":"True Shop Lotus's Buengkan","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":2.29},{"id":127,"name":"True Shop Lotus's Somdet Kalasin","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":3,"qg":1,"sheep":0,"tg":1.84},{"id":128,"name":"True Shop Lotus's Phon Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":3.45},{"id":129,"name":"True Shop Lotus's Banphue Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":3,"sheep":0,"tg":3},{"id":130,"name":"True Shop Lotus's Nongruea  Khonkaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.68},{"id":131,"name":"True Shop Wangsaphung Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":0,"qg":1,"sheep":0,"tg":2.1},{"id":132,"name":"True Shop Mueang Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":2,"sheep":0,"tg":1.9},{"id":133,"name":"True Shop Big C Banphai Khon Kaen","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":2.52},{"id":134,"name":"True Shop Big C Bandung Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":3.19},{"id":135,"name":"True Shop Big C Khonkaen 2","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":1.68},{"id":136,"name":"True Shop Big C Loei","type":"Non Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":6.45},{"id":137,"name":"True Shop Big C Phangkhon Sakonnakhon","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":1.48},{"id":138,"name":"True Shop Big C Khamtakla Sakonnakhon","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":2,"qg":0,"sheep":0,"tg":1.52},{"id":139,"name":"True Shop Asawann Phonphisai Nong Khai ","type":"Non Matching","area":"UPC - Upper Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.23},{"id":140,"name":"True Shop Asawann Shopping Complex Nongkhai","type":"Non Matching","area":"UPC - Upper Northeast","size":"L","region":"UPC I","qd":5,"qg":3,"sheep":0,"tg":5.65},{"id":141,"name":"True Shop UD Town Udonthani","type":"Non Matching","area":"UPC - Upper Northeast","size":"M","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.97},{"id":142,"name":"True Shop The Mall Nakhonratchasima 3Fl.","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":5,"qg":4,"sheep":2,"tg":17.61},{"id":143,"name":"True Shop Central Plaza Nakhonratchasima","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":5,"qg":5,"sheep":4,"tg":11.84},{"id":144,"name":"True Shop Robinson Buriram","type":"Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":1,"qg":4,"sheep":0,"tg":6.32},{"id":145,"name":"True Shop Robinson Chaiyaphum","type":"Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":2,"qg":3,"sheep":0,"tg":7.52},{"id":146,"name":"True Shop The Mall Korat (D)","type":"Hall","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":6,"qg":4,"sheep":4,"tg":1.52},{"id":147,"name":"True Shop Lotus's Pakthongchai (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":0.65},{"id":148,"name":"True Shop Robinson Chaiyaphum (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":149,"name":"True Shop Lotus's Bua Yai (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":150,"name":"True Shop Lotus's Phimai Nakhon (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":151,"name":"True Shop Lotus's Sangkha (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":152,"name":"True Shop Big C Korat 2 (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":153,"name":"True Shop Lotus's Prasat (D)","type":"COCO","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":2,"sheep":0,"tg":0.65},{"id":154,"name":"True Shop Lotus's Buayai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":3.48},{"id":155,"name":"True Shop Lotus's Sungkha Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":3.84},{"id":156,"name":"True Shop Lotus's Prasat Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":2,"sheep":0,"tg":3.84},{"id":157,"name":"True Shop Lotus's Thatum Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.81},{"id":158,"name":"True Shop Lotus's Kaengkhro Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":3,"qg":2,"sheep":0,"tg":5.52},{"id":159,"name":"True Shop Lotus's Phimai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":4,"qg":6,"sheep":0,"tg":5.52},{"id":160,"name":"True Shop Lotus's JorHor Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.26},{"id":161,"name":"True Shop Lotus's Prakonchai Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":2,"sheep":0,"tg":5.35},{"id":162,"name":"True Shop Lotus's Lamplaimat Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":1,"sheep":0,"tg":2.29},{"id":163,"name":"True Shop Lotus's Satuek Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":3,"qg":1,"sheep":0,"tg":3.58},{"id":164,"name":"True Shop Lotus's Nonthai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":3,"sheep":0,"tg":2.39},{"id":165,"name":"True Shop Terminal 21 Korat","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":2,"qg":5,"sheep":1,"tg":4.29},{"id":166,"name":"True Shop Kaset Sombun Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.42},{"id":167,"name":"True Shop Nongbunmak Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":2,"sheep":0,"tg":2.97},{"id":168,"name":"True Shop Sikhoraphum Surin","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":0,"sheep":0,"tg":2.42},{"id":169,"name":"True Shop Pakthongchai Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.71},{"id":170,"name":"True Shop Huai Thalaeng Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.68},{"id":171,"name":"True Shop Dan Khun Thot Nakhonratchasima ","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.13},{"id":172,"name":"True Shop Khon Buri Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":2.13},{"id":173,"name":"True Shop Soeng Sang Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":1.94},{"id":174,"name":"True Shop Chatturat Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":1.94},{"id":175,"name":"True Shop Kao Yai Market Village","type":"Non Matching","area":"UPC - Lower Northeast","size":"L","region":"UPC I","qd":7,"qg":3,"sheep":0,"tg":11.68},{"id":176,"name":"True Shop Chumphuang Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":2,"qg":2,"sheep":0,"tg":2.68},{"id":177,"name":"True Shop Big C Korat 2","type":"Non Matching","area":"UPC - Lower Northeast","size":"M","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":2.87},{"id":178,"name":"True Shop Big C Nongki Buriram","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":1,"qg":1,"sheep":0,"tg":3.97},{"id":179,"name":"True Shop Down Town Nakhonratchasima","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.45},{"id":180,"name":"True Shop Big C Chaiyaphum","type":"Non Matching","area":"UPC - Lower Northeast","size":"S","region":"UPC I","qd":0,"qg":0,"sheep":0,"tg":1.84},{"id":181,"name":"True Shop Central Festival Pattaya Beach","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":8,"qg":9,"sheep":3,"tg":20.61},{"id":182,"name":"True Shop Central Plaza Rayong","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":7,"qg":17,"sheep":4,"tg":13.39},{"id":183,"name":"True Shop Central Chonburi","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":12,"qg":9,"sheep":0,"tg":18.19},{"id":184,"name":"True shop Central Plaza Si Racha","type":"Matching","area":"UPC - East","size":"L","region":"UPC II","qd":5,"qg":3,"sheep":0,"tg":7.39},{"id":185,"name":"True Shop Central Chanthaburi","type":"Matching","area":"UPC - East","size":"M","region":"UPC II","qd":2,"qg":0,"sheep":0,"tg":10.87},{"id":186,"name":"True Shop Central Rayong (D)","type":"Hall","area":"UPC - East","size":"L","region":"UPC II","qd":17,"qg":2,"sheep":0,"tg":1.52},{"id":187,"name":"True Shop Central Festival Pattaya (D)","type":"Hall","area":"UPC - East","size":"L","region":"UPC II","qd":4,"qg":0,"sheep":0,"tg":1.52},{"id":188,"name":"True Shop Terminal 21 Pattaya","type":"Non Matching","area":"UPC - East","size":"L","region":"UPC II","qd":11,"qg":3,"sheep":1,"tg":14.87},{"id":189,"name":"True Shop Trad","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":1,"qg":1,"sheep":0,"tg":2.81},{"id":190,"name":"True Shop Chonburi","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":5,"qg":4,"sheep":0,"tg":1.68},{"id":191,"name":"True Shop South Pattaya","type":"Non Matching","area":"UPC - East","size":"M","region":"UPC II","qd":0,"qg":2,"sheep":0,"tg":2.32},{"id":192,"name":"True Shop Central Plaza Mahachai","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":16,"qg":10,"sheep":1,"tg":15.84},{"id":193,"name":"True Shop Central Plaza Salaya","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":5,"qg":8,"sheep":1,"tg":10.81},{"id":194,"name":"True Shop Central Nakhonpathom","type":"Matching","area":"UPC - West","size":"L","region":"UPC II","qd":6,"qg":4,"sheep":0,"tg":12.03},{"id":195,"name":"True Shop Central Plaza Mahachai (D)","type":"Hall","area":"UPC - West","size":"L","region":"UPC II","qd":4,"qg":2,"sheep":0,"tg":1.52},{"id":196,"name":"True Shop Central Salaya (D)","type":"Hall","area":"UPC - West","size":"L","region":"UPC II","qd":3,"qg":1,"sheep":0,"tg":1.52},{"id":197,"name":"True Shop Lotus's Sam Chuk (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":3,"qg":0,"sheep":0,"tg":0.65},{"id":198,"name":"True Shop Lotus's Pran Buri (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":199,"name":"True Shop Lotus's Amphur U-Thong (D)","type":"COCO","area":"UPC - West","size":"S","region":"UPC II","qd":1,"qg":0,"sheep":0,"tg":0.65},{"id":200,"name":"True Shop Hua Hin","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":1,"qg":0,"sheep":0,"tg":1.32},{"id":201,"name":"True Shop Lotus's Nakhonpathom","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":1.9},{"id":202,"name":"True Shop Lotus's Sampran Nakhonpathom","type":"Non Matching","area":"UPC - West","size":"M","region":"UPC II","qd":0,"qg":1,"sheep":0,"tg":2},{"id":203,"name":"True Shop Lotus's U-Thong Suphanburi","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":2,"qg":1,"sheep":0,"tg":2.42},{"id":204,"name":"True Shop Lotus's Samchuk Suphanburi","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":2.23},{"id":205,"name":"True Shop Station Lotus's Pranburi Prachuapkhirikhan","type":"Non Matching","area":"UPC - West","size":"S","region":"UPC II","qd":1,"qg":0,"sheep":0,"tg":1.03},{"id":206,"name":"True Shop Robinson Kanchanaburi","type":"Non Matching","area":"UPC - West","size":"L","region":"UPC II","qd":5,"qg":2,"sheep":0,"tg":6.23},{"id":207,"name":"True Shop Ayudhaya Park","type":"Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":12,"qg":21,"sheep":3,"tg":13},{"id":208,"name":"True Shop Robinson Lopburi","type":"Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":4,"qg":1,"sheep":1,"tg":6.94},{"id":209,"name":"True shop Central Ayutthaya","type":"Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":1,"qg":1,"sheep":1,"tg":7.16},{"id":210,"name":"True Shop Central Nakhonsawan","type":"Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":3,"qg":3,"sheep":1,"tg":8.48},{"id":211,"name":"True Shop Ayutthaya (D)","type":"Hall","area":"UPC - Central","size":"L","region":"UPC II","qd":9,"qg":5,"sheep":0,"tg":1.52},{"id":212,"name":"True Shop Lotus's Bang Pa-In Ayudhaya","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":1.32},{"id":213,"name":"True Shop The Walk Nakornsawan","type":"Non Matching","area":"UPC - Central","size":"L","region":"UPC II","qd":3,"qg":2,"sheep":0,"tg":3.97},{"id":214,"name":"True Shop Lotus's Khok Samrong Lopburi","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":1,"qg":2,"sheep":0,"tg":1.52},{"id":215,"name":"True Move Shop Taweekit Complex Saraburi","type":"Non Matching","area":"UPC - Central","size":"M","region":"UPC II","qd":4,"qg":7,"sheep":0,"tg":6.97},{"id":216,"name":"True Shop Uthaithani","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":1.55},{"id":217,"name":"True Shop Big C Nongbua Nakhonsawan","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":1,"qg":0,"sheep":0,"tg":1.84},{"id":218,"name":"True Shop Lotus's Keangkoi Saraburi","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":1.03},{"id":219,"name":"Kiosk Lotus's Sena Ayutthaya","type":"Non Matching","area":"UPC - Central","size":"S","region":"UPC II","qd":1,"qg":1,"sheep":0,"tg":1.32},{"id":220,"name":"True Shop Central Festival Phuket","type":"Matching","area":"UPC - Upper South","size":"L","region":"UPC II","qd":15,"qg":11,"sheep":1,"tg":22.77},{"id":221,"name":"True Shop Central Festival Samui Suratthani","type":"Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":0,"qg":6,"sheep":0,"tg":4.16},{"id":222,"name":"True Shop Central Suratthani","type":"Matching","area":"UPC - Upper South","size":"L","region":"UPC II","qd":9,"qg":5,"sheep":4,"tg":13.32},{"id":223,"name":"True Shop Central Krabi","type":"Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":3,"qg":7,"sheep":1,"tg":5.52},{"id":224,"name":"True Shop Central Festival Samui (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":0,"qg":1,"sheep":0,"tg":1.52},{"id":225,"name":"True Shop Central Plaza Suratthani (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":7,"qg":1,"sheep":2,"tg":1.52},{"id":226,"name":"True Shop Phuket (D)","type":"Hall","area":"UPC - Upper South","size":"L","region":"UPC II","qd":8,"qg":3,"sheep":0,"tg":1.52},{"id":227,"name":"True Shop Ocean Shopping Mall (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":2,"qg":1,"sheep":0,"tg":0.65},{"id":228,"name":"True Shop Big C Ranong (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":2,"qg":0,"sheep":0,"tg":0.65},{"id":229,"name":"True Shop Lotus's Chaiya (D)","type":"COCO","area":"UPC - Upper South","size":"S","region":"UPC II","qd":1,"qg":1,"sheep":0,"tg":0.65},{"id":230,"name":"True Shop Lotus's Ranong","type":"Non Matching","area":"UPC - Upper South","size":"M","region":"UPC II","qd":4,"qg":1,"sheep":5,"tg":4.29},{"id":231,"name":"True Shop  Ocean Complex Chumphon","type":"Non Matching","area":"UPC - Upper South","size":"S","region":"UPC II","qd":0,"qg":2,"sheep":0,"tg":1.94},{"id":232,"name":"True Shop Central Plaza Nakhonsithammarat","type":"Matching","area":"UPC - Lower South","size":"L","region":"UPC II","qd":7,"qg":10,"sheep":0,"tg":11.29},{"id":233,"name":"True Shop Central Festival Hadyai Songkhla","type":"Matching","area":"UPC - Lower South","size":"L","region":"UPC II","qd":3,"qg":10,"sheep":1,"tg":15.13},{"id":234,"name":"True Shop Central Nakorn Sithammarat (D)","type":"Hall","area":"UPC - Lower South","size":"L","region":"UPC II","qd":1,"qg":1,"sheep":3,"tg":1.52},{"id":235,"name":"True Shop Central Festival Hat Yai (D)","type":"Hall","area":"UPC - Lower South","size":"L","region":"UPC II","qd":6,"qg":8,"sheep":1,"tg":1.52},{"id":236,"name":"True Shop Ampur Ranot Songkhla (D)","type":"COCO","area":"UPC - Lower South","size":"S","region":"UPC II","qd":0,"qg":0,"sheep":0,"tg":0.65},{"id":237,"name":"True Shop Mini Mueang Satun","type":"Non Matching","area":"UPC - Lower South","size":"S","region":"UPC II","qd":1,"qg":0,"sheep":0,"tg":1.35}]}}
+</script>
+<script>
+const RAW = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+// live working copies (deep clone so we can reset)
+const STATE = {
+  mtd: JSON.parse(JSON.stringify(RAW.mtd.shop)),
+  day: JSON.parse(JSON.stringify(RAW.day.shop)),
+};
+
+let period = 'mtd';
+let sortState = { region: {key:null, dir:1}, area: {key:null, dir:1}, shop: {key:null, dir:1} };
+
+const fmtInt = n => (n === null || n === undefined || isNaN(n)) ? '-' : Math.round(n).toLocaleString('en-US');
+const fmtNum = n => (n === null || n === undefined || isNaN(n)) ? '-' : (Math.round(n*100)/100).toLocaleString('en-US');
+const fmtPct = n => (n === null || n === undefined || isNaN(n)) ? '-' : (n*100).toFixed(1) + '%';
+
+function pctClass(v){
+  if (v === null || v === undefined || isNaN(v)) return '';
+  if (v >= 0.5) return 'good';
+  if (v >= 0.3) return 'warn';
+  return 'bad';
+}
+
+// derive computed fields on a shop row
+function deriveRow(r){
+  r.tg1 = (r.qd || 0) * 2;
+  r.qg1 = (r.qg || 0) + (r.sheep || 0);
+  r.ar = r.tg1 ? r.qg / r.tg1 : 0;
+  r.ag = r.tg ? r.qg1 / r.tg : 0;
+  return r;
+}
+
+function currentShops(){
+  return STATE[period];
+}
+
+function ensureDerived(){
+  currentShops().forEach(deriveRow);
+}
+
+function populateSelectors(){
+  const shops = currentShops();
+  const regions = [...new Set(shops.map(s => s.region).filter(Boolean))].sort();
+  const regionSelect = document.getElementById('regionSelect');
+  const prevRegion = regionSelect.value;
+  regionSelect.innerHTML = '<option value="">ทั้งหมด</option>' + regions.map(r => `<option value="${r}">${r}</option>`).join('');
+  if (regions.includes(prevRegion)) regionSelect.value = prevRegion;
+
+  const types = [...new Set(shops.map(s => s.type).filter(Boolean))].sort();
+  const typeSelect = document.getElementById('typeSelect');
+  const prevType = typeSelect.value;
+  typeSelect.innerHTML = '<option value="">ทั้งหมด</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+  if (types.includes(prevType)) typeSelect.value = prevType;
+
+  const sizes = [...new Set(shops.map(s => s.size).filter(Boolean))].sort();
+  const sizeSelect = document.getElementById('sizeSelect');
+  const prevSize = sizeSelect.value;
+  sizeSelect.innerHTML = '<option value="">ทั้งหมด</option>' + sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (sizes.includes(prevSize)) sizeSelect.value = prevSize;
+
+  updateAreaSelector();
+}
+
+function updateAreaSelector(){
+  const shops = currentShops();
+  const regionVal = document.getElementById('regionSelect').value;
+  const areaSelect = document.getElementById('areaSelect');
+  const prevArea = areaSelect.value;
+  let areas = [...new Set(shops.filter(s => !regionVal || s.region === regionVal).map(s => s.area).filter(Boolean))].sort();
+  areaSelect.innerHTML = '<option value="">ทั้งหมด</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join('');
+  if (areas.includes(prevArea)) areaSelect.value = prevArea;
+}
+
+function getFilteredShops(){
+  const regionVal = document.getElementById('regionSelect').value;
+  const areaVal = document.getElementById('areaSelect').value;
+  const typeVal = document.getElementById('typeSelect').value;
+  const sizeVal = document.getElementById('sizeSelect').value;
+  const search = document.getElementById('shopSearch').value.trim().toLowerCase();
+  return currentShops().filter(s => {
+    if (regionVal && s.region !== regionVal) return false;
+    if (areaVal && s.area !== areaVal) return false;
+    if (typeVal && s.type !== typeVal) return false;
+    if (sizeVal && s.size !== sizeVal) return false;
+    if (search && !s.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function sumRows(rows){
+  const qd = rows.reduce((a,s)=>a+(s.qd||0),0);
+  const qg = rows.reduce((a,s)=>a+(s.qg||0),0);
+  const sheep = rows.reduce((a,s)=>a+(s.sheep||0),0);
+  const tg = rows.reduce((a,s)=>a+(s.tg||0),0);
+  const tg1 = qd*2;
+  const qg1 = qg+sheep;
+  const ar = tg1 ? qg/tg1 : 0;
+  const ag = tg ? qg1/tg : 0;
+  return {qd, qg, sheep, tg, tg1, qg1, ar, ag};
+}
+
+function groupBy(rows, keyFn){
+  const map = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r);
+    if (!k) return;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(r);
+  });
+  return map;
+}
+
+function renderCards(){
+  const filtered = getFilteredShops();
+  const agg = sumRows(filtered);
+  document.getElementById('cardsRow').innerHTML = `
+    <div class="card"><div class="label">QTY Device</div><div class="value">${fmtInt(agg.qd)}</div></div>
+    <div class="card"><div class="label">QTY GIA</div><div class="value">${fmtInt(agg.qg)}</div></div>
+    <div class="card"><div class="label">%Attach rate</div><div class="value ${agg.ar>=0.5?'good':(agg.ar<0.3?'bad':'')}">${fmtPct(agg.ar)}</div></div>
+    <div class="card"><div class="label">% Achieve GIA</div><div class="value ${agg.ag>=0.5?'good':(agg.ag<0.3?'bad':'')}">${fmtPct(agg.ag)}</div></div>
+  `;
+}
+
+function sortRows(rows, key, dir){
+  if (!key) return rows;
+  return [...rows].sort((a,b) => {
+    let va = a[key], vb = b[key];
+    if (typeof va === 'string' || typeof vb === 'string') {
+      va = (va||'').toString(); vb = (vb||'').toString();
+      return va.localeCompare(vb) * dir;
+    }
+    return ((va||0) - (vb||0)) * dir;
+  });
+}
+
+function summaryRowHtml(name, agg, isTotal){
+  return `<tr class="${isTotal?'total-row':''}">
+    <td>${name}</td>
+    <td class="num">${fmtInt(agg.qd)}</td>
+    <td class="num">${fmtInt(agg.tg1)}</td>
+    <td class="num">${fmtInt(agg.qg)}</td>
+    <td class="num"><span class="pct ${pctClass(agg.ar)}">${fmtPct(agg.ar)}</span></td>
+    <td class="num">${fmtInt(agg.tg)}</td>
+    <td class="num">${fmtInt(agg.qg1)}</td>
+    <td class="num"><span class="pct ${pctClass(agg.ag)}">${fmtPct(agg.ag)}</span></td>
+  </tr>`;
+}
+
+function renderRegionalTable(){
+  const regionVal = document.getElementById('regionSelect').value;
+  // base pool respects area/type/size/search filters, but not region (so all regions still list unless one chosen)
+  const areaVal = document.getElementById('areaSelect').value;
+  const typeVal = document.getElementById('typeSelect').value;
+  const sizeVal = document.getElementById('sizeSelect').value;
+  const search = document.getElementById('shopSearch').value.trim().toLowerCase();
+  const pool = currentShops().filter(s => {
+    if (areaVal && s.area !== areaVal) return false;
+    if (typeVal && s.type !== typeVal) return false;
+    if (sizeVal && s.size !== sizeVal) return false;
+    if (search && !s.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const groups = groupBy(pool, s => s.region);
+  let names = [...groups.keys()];
+  if (regionVal) names = names.filter(n => n === regionVal);
+  names = sortState.region.key ? names : names.sort();
+  let rowsData = names.map(n => ({name:n, agg: sumRows(groups.get(n))}));
+  rowsData = sortRows(rowsData.map(r=>({name:r.name, ...r.agg})), sortState.region.key, sortState.region.dir);
+
+  const tbody = document.querySelector('#regionalTable tbody');
+  let html = rowsData.map(r => summaryRowHtml(r.name, r)).join('');
+  if (!regionVal && pool.length) {
+    html += summaryRowHtml('Total', sumRows(pool), true);
+  }
+  if (!html) html = `<tr><td colspan="8" class="empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+  tbody.innerHTML = html;
+}
+
+function renderAreaTable(){
+  const regionVal = document.getElementById('regionSelect').value;
+  const areaVal = document.getElementById('areaSelect').value;
+  const typeVal = document.getElementById('typeSelect').value;
+  const sizeVal = document.getElementById('sizeSelect').value;
+  const search = document.getElementById('shopSearch').value.trim().toLowerCase();
+  const pool = currentShops().filter(s => {
+    if (regionVal && s.region !== regionVal) return false;
+    if (typeVal && s.type !== typeVal) return false;
+    if (sizeVal && s.size !== sizeVal) return false;
+    if (search && !s.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const groups = groupBy(pool, s => s.area);
+  let names = [...groups.keys()];
+  if (areaVal) names = names.filter(n => n === areaVal);
+  names = names.sort();
+  let rowsData = names.map(n => ({name:n, ...sumRows(groups.get(n))}));
+  rowsData = sortRows(rowsData, sortState.area.key, sortState.area.dir);
+
+  const tbody = document.querySelector('#areaTable tbody');
+  let html = rowsData.map(r => summaryRowHtml(r.name, r)).join('');
+  if (!areaVal && pool.length) {
+    html += summaryRowHtml('Total', sumRows(pool), true);
+  }
+  if (!html) html = `<tr><td colspan="8" class="empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+  tbody.innerHTML = html;
+}
+
+function shopRowHtml(r){
+  return `<tr data-id="${r.id}">
+    <td>${r.name}</td>
+    <td>${r.region||'-'}</td>
+    <td>${r.area||'-'}</td>
+    <td>${r.type||'-'}</td>
+    <td>${r.size||'-'}</td>
+    <td class="num"><input class="cell-edit" type="number" step="any" data-field="qd" value="${r.qd}"></td>
+    <td class="num">${fmtInt(r.tg1)}</td>
+    <td class="num"><input class="cell-edit" type="number" step="any" data-field="qg" value="${r.qg}"></td>
+    <td class="num"><input class="cell-edit" type="number" step="any" data-field="sheep" value="${r.sheep}"></td>
+    <td class="num"><span class="pct ${pctClass(r.ar)}">${fmtPct(r.ar)}</span></td>
+    <td class="num"><input class="cell-edit" type="number" step="any" data-field="tg" value="${fmtNum(r.tg)}"></td>
+    <td class="num">${fmtInt(r.qg1)}</td>
+    <td class="num"><span class="pct ${pctClass(r.ag)}">${fmtPct(r.ag)}</span></td>
+  </tr>`;
+}
+
+function renderShopTable(){
+  let rows = getFilteredShops();
+  rows = sortRows(rows, sortState.shop.key, sortState.shop.dir);
+  document.getElementById('shopCount').textContent = `(${rows.length} สาขา)`;
+  const tbody = document.querySelector('#shopTable tbody');
+  if (rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="13" class="empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(shopRowHtml).join('');
+
+  tbody.querySelectorAll('input.cell-edit').forEach(input => {
+    input.addEventListener('change', onCellEdit);
+  });
+}
+
+function onCellEdit(e){
+  const tr = e.target.closest('tr');
+  const id = Number(tr.dataset.id);
+  const field = e.target.dataset.field;
+  let val = parseFloat(e.target.value);
+  if (isNaN(val)) val = 0;
+  const shop = currentShops().find(s => s.id === id);
+  if (!shop) return;
+  shop[field] = val;
+  deriveRow(shop);
+  renderAll(true);
+}
+
+function renderAll(keepShopScroll){
+  renderCards();
+  renderRegionalTable();
+  renderAreaTable();
+  if (!keepShopScroll) {
+    renderShopTable();
+  } else {
+    const scrollBox = document.querySelector('.shop-wrap');
+    const scrollTop = scrollBox ? scrollBox.scrollTop : 0;
+    renderShopTable();
+    if (scrollBox) scrollBox.scrollTop = scrollTop;
+  }
+}
+
+function setupSortHandlers(){
+  document.querySelectorAll('#regionalTable thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      sortState.region.dir = sortState.region.key === key ? -sortState.region.dir : 1;
+      sortState.region.key = key;
+      renderRegionalTable();
+    });
+  });
+  document.querySelectorAll('#areaTable thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      sortState.area.dir = sortState.area.key === key ? -sortState.area.dir : 1;
+      sortState.area.key = key;
+      renderAreaTable();
+    });
+  });
+  document.querySelectorAll('#shopTable thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      sortState.shop.dir = sortState.shop.key === key ? -sortState.shop.dir : 1;
+      sortState.shop.key = key;
+      renderShopTable();
+    });
+  });
+}
+
+function exportCsv(){
+  const rows = currentShops();
+  const headers = ['Shop Name','Region','Area','Type','Size','QTY Device','Target GIA 1:2','QTY GIA','Sheep','%Attach rate','Target GIA','QTY GIA1','% Achieve GIA'];
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    const line = [r.name, r.region, r.area, r.type, r.size, r.qd, r.tg1, r.qg, r.sheep, (r.ar*100).toFixed(2)+'%', r.tg, r.qg1, (r.ag*100).toFixed(2)+'%']
+      .map(v => `"${(v===null||v===undefined?'':v).toString().replace(/"/g,'""')}"`).join(',');
+    lines.push(line);
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const label = document.getElementById('dateLabelInput').value.trim() || period;
+  a.href = url;
+  a.download = `attach_rate_${period}_${label}.csv`.replace(/[^a-zA-Z0-9_.\-ก-๙]/g,'_');
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('btnMtd').addEventListener('click', () => {
+  period = 'mtd';
+  document.getElementById('btnMtd').classList.add('active');
+  document.getElementById('btnDay').classList.remove('active');
+  populateSelectors();
+  renderAll();
+});
+document.getElementById('btnDay').addEventListener('click', () => {
+  period = 'day';
+  document.getElementById('btnDay').classList.add('active');
+  document.getElementById('btnMtd').classList.remove('active');
+  populateSelectors();
+  renderAll();
+});
+document.getElementById('regionSelect').addEventListener('change', () => { updateAreaSelector(); renderAll(); });
+document.getElementById('areaSelect').addEventListener('change', renderAll);
+document.getElementById('typeSelect').addEventListener('change', renderAll);
+document.getElementById('sizeSelect').addEventListener('change', renderAll);
+document.getElementById('shopSearch').addEventListener('input', renderAll);
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (!confirm('ต้องการรีเซ็ตข้อมูลกลับเป็นค่าตั้งต้นทั้งหมดหรือไม่? การแก้ไขทั้งหมดจะหายไป')) return;
+  STATE.mtd = JSON.parse(JSON.stringify(RAW.mtd.shop));
+  STATE.day = JSON.parse(JSON.stringify(RAW.day.shop));
+  ensureDerived();
+  renderAll();
+});
+document.getElementById('btnExport').addEventListener('click', exportCsv);
+
+ensureDerived();
+populateSelectors();
+setupSortHandlers();
+renderAll();
+
+</script>
+</body>
+</html>
