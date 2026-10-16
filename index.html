@@ -272,7 +272,7 @@ td .sub{font-size:11.5px;color:var(--ink3)}
     <div class="card"><div class="card-h"><div><h3 id="trendT">Daily trend</h3><p class="hint" id="trendH"></p></div><div class="seg pseg" data-p="trend"><button data-m="n">Net Amount</button><button data-m="q">QTY</button></div></div><div class="chart" id="trend"></div></div>
   </section>
 
-  <section class="grid two" style="margin-top:16px">
+  <section class="grid two" style="margin-top:16px" id="geoSec">
     <div class="grid" style="align-content:start">
     <div class="card"><div class="card-h"><div><h3>Regional</h3><p class="hint">BMA / UPC I / UPC II</p></div><div class="seg pseg" data-p="rg"><button data-m="n">Net Amount</button><button data-m="q">QTY</button></div></div><div class="tbl-wrap" id="rgTbl"></div></div>
     <div class="card"><div class="card-h"><div><h3>Channel</h3><p class="hint">ผลงานแยกตามประเภทร้าน</p></div><div class="seg pseg" data-p="ch"><button data-m="n">Net Amount</button><button data-m="q">QTY</button></div></div><div class="tbl-wrap" id="chTbl"></div>
@@ -1116,7 +1116,7 @@ function renderData(){
   var RQ=compute(st.tab,'q'),RN=compute(st.tab,'n');renderKpis(RQ,RN,pr);
   function withM(k,fn){var o=st.metric,m=PM()[k];st.metric=m;try{fn(m==='n'?RN:RQ)}finally{st.metric=o}
     Array.prototype.forEach.call(document.querySelectorAll('.pseg[data-p="'+k+'"] button'),function(b){b.classList.toggle('on',b.dataset.m===m)})}
-  withM('vs',renderVs);withM('trend',renderTrend);withM('rg',renderRegional);withM('area',renderArea);withM('ch',function(r){renderCh(r);renderMix(r,pr)});renderShops(RQ,RN);var isB=st.tab==='DBRAND';var ss=$('shopSec'),par=ss.parentNode;if(isB)par.insertBefore(ss,$('modelSec').nextSibling);else par.insertBefore(ss,$('brandSec'));$('staffSec').style.display=isB?'none':'';$('brandSec').style.display=isB?'':'none';$('modelSec').style.display=isB?'':'none';if(isB){renderBrand(RQ,RN);renderModel(RQ,RN)}else renderStaff(RQ,RN);withM('exec',function(r){renderExec(r,pr)});
+  withM('vs',renderVs);withM('trend',renderTrend);withM('rg',renderRegional);withM('area',renderArea);withM('ch',function(r){renderCh(r);renderMix(r,pr)});renderShops(RQ,RN);var isB=st.tab==='DBRAND';var ss=$('shopSec'),par=ss.parentNode;if(isB)par.insertBefore(ss,$('modelSec').nextSibling);else par.insertBefore(ss,$('brandSec'));$('staffSec').style.display=isB?'none':'';var isSI=st.tab==='STAFF';$('geoSec').style.display=isSI?'none':'';ss.style.display=isSI?'none':'';$('brandSec').style.display=isB?'':'none';$('modelSec').style.display=isB?'':'none';if(isB){renderBrand(RQ,RN);renderModel(RQ,RN)}else renderStaff(RQ,RN);withM('exec',function(r){renderExec(r,pr)});
   $('foot').textContent='Sales Performance · '+pr.label+' · เป้าตามสัดส่วนวัน = เป้าทั้งเดือน × วันที่เลือก ÷ '+R.dim+' วัน · Run-rate = ยอดเฉลี่ยต่อวัน × '+R.dim+' วัน';
 }
 function renderKpis(Rq,Rn,pr){
@@ -1357,9 +1357,12 @@ function renderExec(R,pr){
 
   var icon={good:['✓','var(--good-bg)','var(--good)'],warn:['!','var(--warn-bg)','var(--warn)'],bad:['↓','var(--bad-bg)','var(--bad)'],info:['i','var(--blue-soft)','var(--blue)'],na:['–','#eef2f7','var(--ink3)']};
   var h='<div class="exec-h"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><div><h2>Executive Analysis &amp; Action — Detailed</h2><p>'+esc(pr.label)+' · '+(m==='n'?'Net Amount':'QTY')+' · '+esc(R.periodLbl)+' · วิเคราะห์ตามตัวกรองที่เลือก</p></div><div class="seg pseg" data-p="exec" style="margin-left:auto"><button data-m="n"'+(m==='n'?' class="on"':'')+'>Net Amount</button><button data-m="q"'+(m==='q'?' class="on"':'')+'>QTY</button></div></div>';
+  var isSI=st.tab==='STAFF';
+  if(!isSI){
   h+='<div class="grid two"><div><div class="sec-t">Performance &amp; Funnel Analysis</div><ul class="ins">'+ins.map(function(x){var ic=icon[x[0]]||icon.info;return '<li><span class="ib" style="background:'+ic[1]+';color:'+ic[2]+'">'+ic[0]+'</span><span>'+x[1]+'</span></li>'}).join('')+'</ul></div>';
   h+='<div><div class="sec-t">Funnel</div>'+(R.hasT?fhtml('ร้าน (Shop)',fs,fl)+noSalesHtml(shops)+fhtml(isB?'Brand':'พนักงาน (Staff)',ff,fl):'<div class="empty">'+(R.noTgtMetric?'ไม่มีเป้า '+(m==='n'?'Net Amount':'QTY'):'ไม่มีเป้าในเดือนนี้')+'</div>')+'</div></div>';
 
+  }
   // Shop priority
   var rest='';
   function tier(r){return r.a<=0?['Critical','bad']:r.ach<50?['Critical','bad']:r.ach<80?['High','warn']:['Watch','na']}
@@ -1375,6 +1378,7 @@ function renderExec(R,pr){
   if(isB){h+=brandModelPriority(R,pr,remain,tier,needDay);$('exec').innerHTML=h;return}
   var isC=st.tab==='CHAMP',stCnt={},stSell={};
   if(isC)Object.keys(R.staffShop).forEach(function(p){Object.keys(R.staffShop[p]).forEach(function(si){stCnt[si]=(stCnt[si]||0)+1;if((R.staff[p]||0)>0)stSell[si]=(stSell[si]||0)+1})});
+  if(!isSI){
   h+='<div style="margin-top:18px"><div class="sec-t">Shop Priority — จุดที่ต้องลงมือ</div>';
   if(!R.hasT)h+='<div class="empty">'+(R.noTgtMetric?'ไม่มีเป้า '+(m==='n'?'Net Amount':'QTY')+' — สลับเป็น '+(m==='n'?'QTY':'Net Amount')+' ที่มุมขวาบนของส่วนนี้':'ไม่มีเป้าในเดือนนี้')+'</div>';
   else{h+='<p class="hint">'+sp.length+' ร้านยังไม่ถึงเป้าตามวัน · '+(st.tab==='CHAMP'?'เรียงตาม % Ach น้อยที่สุด':'เรียงตาม gap มากสุด')+' · Critical &lt;50% · High 50–79% · Watch 80–99%</p><div class="tbl-wrap"><table class="pri"><thead><tr><th>Shop</th>'+(isC?'<th>พนักงาน</th>':'')+'<th>Priority</th><th>Target</th><th>Actual</th><th>% Ach</th><th>Gap</th><th>ต้องทำ/วัน</th><th style="text-align:left">Action</th></tr></thead><tbody>';
@@ -1382,6 +1386,7 @@ function renderExec(R,pr){
     if(!sp.length)h+='<tr><td colspan="'+(isC?9:8)+'" class="empty">ทุกร้านถึงเป้าตามวันแล้ว 🎉</td></tr>';
     h+='</tbody></table></div>'}
   h+='</div>';
+  }
 
   // Staff priority
   function staffAction(r){
