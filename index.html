@@ -808,7 +808,7 @@ td .sub{font-size:11.5px;color:var(--ink3)}
 (function(){
 'use strict';
 var D=null, IDX={};
-var st={tab:'POST',metric:'q',pm:{vs:'n',trend:'n',rg:'n',area:'n',ch:'n',exec:'n'},month:0,days:new Set(),f:{group:new Set(),channel:new Set(),region:new Set(),area:new Set(),shop:new Set(),staff:new Set(),brand:new Set(),model:new Set()}};
+var st={tab:'POST',metric:'q',pm:{vs:'n',trend:'n',rg:'n',area:'n',ch:'n',exec:'n'},month:0,days:new Set(),f:{group:new Set(),channel:new Set(),region:new Set(),area:new Set(),shop:new Set(),staff:new Set(),brand:new Set(),model:new Set(),func:new Set(),prod:new Set()}};
 var tblState={};
 var shopLimit=25, staffLimit=25, modelLimit=25;
 var CH_ORDER=['Matching','Non Matching','Hall','COCO'], GRP=['True Shop','Dtac'], RG_ORDER=['BMA','UPC I','UPC II'];
@@ -820,6 +820,7 @@ var THEMES={
   GIA:{ink:'#1f2a24',ink2:'#526158',ink3:'#86938b',bg:'#f6f9f7',blue:'#3f8f68',blue2:'#46946e',sky:'#b4bac3','sky-soft':'#e4f1ea','blue-soft':'#edf5f0',true:'#3f8f68',dtac:'#b4bac3',h1a:'#367d5a',h1b:'#74b392',h1t:'#e3f3ea',h2a:'#6b7280',h2b:'#9ca3af',h2t:'#f3f4f6',tint:'#ecf4ef',tint2:'#f3f4f6',hover:'#f7faf8',pill:'#ecf4ef',pillb:'#cfe3d7',chipq:'#2f6e50',ring:'rgba(63,143,104,.25)',execb:'#d2e6da',execg:'#f7faf8',f1:'#2f6e50',f2:'#3f8f68',f3:'#74b392',f4:'#b4bac3',line:'#e5ebe7',line2:'#d3ddd7',navy:'#2a5c44'},
   DBRAND:{ink:'#27231a',ink2:'#5f5a4c',ink3:'#8f8a7c',bg:'#fbfaf5',blue:'#a16207',blue2:'#ca8a04',sky:'#71717a','sky-soft':'#fef9c3','blue-soft':'#fdf8e6',true:'#ca8a04',dtac:'#71717a',h1a:'#854d0e',h1b:'#ca8a04',h1t:'#fef3c7',h2a:'#3f3f46',h2b:'#71717a',h2t:'#f4f4f5',tint:'#fbf6e3',tint2:'#f4f4f5',hover:'#fdfbf2',pill:'#fdf6dc',pillb:'#f1e3a8',chipq:'#854d0e',ring:'rgba(161,98,7,.3)',execb:'#efe1a6',execg:'#fdfbf2',f1:'#713f12',f2:'#a16207',f3:'#ca8a04',f4:'#a1a1aa',line:'#ece9df',line2:'#dcd8cb',navy:'#713f12'},
   CHAMP:{ink:'#1f2a37',ink2:'#556274',ink3:'#8794a6',bg:'#f5f8fb',blue:'#4f8fc0',blue2:'#6aa3cf',sky:'#94a3b8','sky-soft':'#e6f0f8','blue-soft':'#edf3f9',true:'#4f8fc0',dtac:'#94a3b8',h1a:'#3b6f99',h1b:'#6aa3cf',h1t:'#e3eef8',h2a:'#64748b',h2b:'#94a3b8',h2t:'#f1f5f9',tint:'#eef4f9',tint2:'#f3f5f8',hover:'#f6f9fc',pill:'#edf3f9',pillb:'#d6e3ef',chipq:'#3b6f99',ring:'rgba(79,143,192,.28)',execb:'#d3e2ef',execg:'#f6f9fc',f1:'#3b6f99',f2:'#4f8fc0',f3:'#7fb0d6',f4:'#a8b4c4',line:'#e4eaf0',line2:'#d3dce6',navy:'#3b6f99'},
+  STAFF:{ink:'#1d2a2b',ink2:'#526466',ink3:'#879799',bg:'#f5f9f9',blue:'#3d8b8f',blue2:'#4a9a9e',sky:'#a3acb5','sky-soft':'#e2f1f1','blue-soft':'#ebf5f5',true:'#3d8b8f',dtac:'#a3acb5',h1a:'#33777a',h1b:'#72b3b6',h1t:'#e0f2f2',h2a:'#6b7280',h2b:'#9ca3af',h2t:'#f3f4f6',tint:'#eaf4f4',tint2:'#f3f4f6',hover:'#f6fafa',pill:'#eaf4f4',pillb:'#cde3e3',chipq:'#2c6a6d',ring:'rgba(61,139,143,.25)',execb:'#cfe4e4',execg:'#f6fafa',f1:'#2c6a6d',f2:'#3d8b8f',f3:'#72b3b6',f4:'#b4bac3',line:'#e3ebeb',line2:'#d1dddd',navy:'#285f62'},
   TOL:{ink:'#0f2547',ink2:'#46607f',ink3:'#7b8ea8',bg:'#f4f8fd',blue:'#1d4ed8',blue2:'#2563eb',sky:'#0ea5e9','sky-soft':'#e0f2fe','blue-soft':'#e8efff',true:'#1d4ed8',dtac:'#0ea5e9',h1a:'#0b2e6b',h1b:'#1d4ed8',h1t:'#cfe1ff',h2a:'#0369a1',h2b:'#0ea5e9',h2t:'#e0f2fe',tint:'#eef4fd',tint2:'#e8f6fd',hover:'#f3f8ff',pill:'#eaf3fe',pillb:'#d4e6fb',chipq:'#075985',ring:'rgba(29,78,216,.3)',execb:'#c9dafb',execg:'#f5f9ff',f1:'#0b2e6b',f2:'#1d4ed8',f3:'#3b82f6',f4:'#0ea5e9',line:'#e3ebf5',line2:'#cfdcec',navy:'#0b2e6b'}};
 function applyTheme(k){var t=THEMES[k]||THEMES.TOL,r=document.documentElement.style;Object.keys(t).forEach(function(n){r.setProperty('--'+n,t[n])});COLORS['True Shop']=t.true;COLORS['Dtac']=t.dtac;
   var mt=document.querySelector('meta[name=theme-color]');if(mt)mt.content=t.blue}
@@ -859,11 +860,23 @@ function weeksOf(mk){var y=Math.floor(mk/100),m=mk%100,first=new Date(y,m-1,1),l
 function prevMonth(mk){var y=Math.floor(mk/100),m=mk%100;m--;if(!m){m=12;y--}return y*100+m}
 
 /* ---------- data prep ---------- */
+var STAFF_PRODS=['POST','DEVICE','GIA','TOL'], STAFF_LBL=['Post','Device','GIA','TOL'];
+function buildStaffIndy(){
+  if(D.facts.STAFF)return;
+  var o={d:[],s:[],p:[],m:[],q:[],n:[]},tg=[],ts=D.shops.map(function(){return [0,0]});
+  STAFF_PRODS.forEach(function(pk,pi){var sf=D.sfacts&&D.sfacts[pk];if(!sf)return;
+    for(var j=0;j<sf.d.length;j++){var st_=D.staff[sf.p[j]];if(!st_||!st_[3])continue;o.d.push(sf.d[j]);o.s.push(sf.s[j]);o.p.push(sf.p[j]);o.m.push(pi);o.q.push(sf.q[j]);o.n.push(sf.n[j])}
+    (D.tgtStaff[pk]||[]).forEach(function(t){tg.push([t[0],t[1],t[2],t[3],pi]);ts[t[1]][0]+=t[2];ts[t[1]][1]+=t[3]})});
+  D.facts.STAFF=o;D.sfacts.STAFF=o;D.tgtStaff.STAFF=tg;D.tgtShop.STAFF=ts;D.mix.STAFF=STAFF_LBL.slice();
+  if(!D.products.some(function(p){return p.key==='STAFF'})){var ci=D.products.map(function(p){return p.key}).indexOf('CHAMP');D.products.splice(ci<0?D.products.length:ci,0,{key:'STAFF',label:'Staff indy',mixLabel:'Product'})}
+}
 function prepare(data){
   D=data;
   D.S=D.shops.map(function(a,i){return {i:i,c:a[0],n:a[1],ch:a[2],g:a[3],rg:a[4],ar:a[5],sz:a[6],am:a[7]}});
   D.P=D.staff.map(function(a,i){return {i:i,id:a[0],n:a[1]||'',et:a[2],t:a[3]}});
   D.tgtM=+D.targetBM;
+  buildStaffIndy();
+  D.products=D.products.filter(function(p){return p.key!=='CHAMP'});if(!D.products.some(function(p){return p.key===st.tab}))st.tab=D.products[0].key;
   // staff → shops, days with data per month
   var ss={}, mdays={};
   function addSS(p,s){(ss[p]||(ss[p]={}))[s]=1}
@@ -877,12 +890,13 @@ function prepare(data){
   Object.keys(mdays).forEach(function(k){D.mdays[k]=Object.keys(mdays[k]).map(Number).sort(function(a,b){return a-b})});
   // primary shop per staff (target shop first)
   D.P.forEach(function(p){var sh=ss[p.i]?Object.keys(ss[p.i]).map(Number):[];p.shops=sh});
-  D.onlyShops={};if(D.facts.CHAMP){var os={},tg=D.tgtShop.CHAMP;tg.forEach(function(t,i){if(t[0]||t[1])os[i]=1});D.facts.CHAMP.s.forEach(function(i){os[i]=1});D.onlyShops.CHAMP=os}
+  D.onlyShops={};if(D.facts.STAFF){var os2={};D.tgtStaff.STAFF.forEach(function(t){if(t[2]||t[3])os2[t[1]]=1});D.facts.STAFF.s.forEach(function(i){os2[i]=1});D.onlyShops.STAFF=os2}
+  if(D.facts.CHAMP){var os={},tg=D.tgtShop.CHAMP;tg.forEach(function(t,i){if(t[0]||t[1])os[i]=1});D.facts.CHAMP.s.forEach(function(i){os[i]=1});D.onlyShops.CHAMP=os}
   D.months=Object.keys(mdays).map(Number).sort(function(a,b){return a-b});
   st.month=D.months.indexOf(D.tgtM)>=0?D.tgtM:D.months[D.months.length-1];
   st.days=new Set();st.week=0;
   D.dkAvail={};Object.keys(D.mdays).forEach(function(mk){D.mdays[mk].forEach(function(d){D.dkAvail[(+mk)*100+d]=1})});
-  ['group','channel','region','area','shop','staff','brand','model'].forEach(function(k){st.f[k]=new Set()});
+  ['group','channel','region','area','shop','staff','brand','model','func','prod'].forEach(function(k){st.f[k]=new Set()});
   if(D.tgtBrand&&D.mix.DBRAND){var bix={};D.mix.DBRAND.forEach(function(b,i){bix[String(b).toUpperCase()]=i});D.tgtBrandIdx=D.tgtBrand.brands.map(function(b){return bix[b]==null?-1:bix[b]})}
 }
 
@@ -893,7 +907,9 @@ var FILTERS=[
   {k:'area',label:'Area'},
   {k:'shop',label:'Shop',search:true},
   {k:'brand',label:'Brand',only:'DBRAND'},
-  {k:'model',label:'Model',search:true,only:'DBRAND'}
+  {k:'model',label:'Model',search:true,only:'DBRAND'},
+  {k:'func',label:'Function',only:'STAFF'},
+  {k:'prod',label:'Product',only:'STAFF'}
 ];
 function shopPass(s,skip){var f=st.f;
   if(skip!=='group'&&f.group.size&&!f.group.has(s.g))return false;
@@ -906,6 +922,8 @@ var LEVEL=['group','channel','region','area','shop'];
 function PM(){st.pmT=st.pmT||{};if(!st.pmT[st.tab]){var d=st.tab==='CHAMP'?'q':'n';st.pmT[st.tab]={vs:d,trend:d,rg:d,area:d,ch:d,exec:d}}return st.pmT[st.tab]}
 function fVisible(F){return !F.only||F.only===st.tab}
 function optionsFor(k){
+  if(k==='func'){var fc={};D.P.forEach(function(p){if(!p.t)return;var e=p.et||'(ไม่ระบุ)';fc[e]=(fc[e]||0)+1});return Object.keys(fc).sort(function(a,b){return (a[0]==='('?1:0)-(b[0]==='('?1:0)||a.localeCompare(b)}).map(function(e){return {v:e,t:e,sub:fc[e]+' คน'}})}
+  if(k==='prod'){return STAFF_LBL.map(function(l,i){return {v:String(i),t:l,sub:''}})}
   if(k==='brand'){var bl=D.mix.DBRAND||[];return bl.map(function(b,i){return {v:String(i),t:b,sub:''}}).sort(function(a,b){return a.t.localeCompare(b.t)})}
   if(k==='model'){var ml=(D.models&&D.models.DBRAND)||[],mb=D.modelBrand.DBRAND,bs=st.f.brand;return ml.map(function(m,i){return {v:String(i),t:m,sub:'',q:D.mix.DBRAND[mb[i]],b:mb[i]}}).filter(function(o){return !bs.size||bs.has(String(o.b))}).sort(function(a,b){return a.t.localeCompare(b.t)})}
   // options cascade: each filter limited by filters above it
@@ -926,7 +944,7 @@ function optionsFor(k){
   else if(k==='staff'){var ok={};shops.forEach(function(s){ok[s.i]=1});o=D.P.filter(function(p){return p.shops.some(function(x){return ok[x]})}).sort(function(a,b){return (b.t-a.t)||(a.n||a.id).localeCompare(b.n||b.id)}).map(function(p){return {v:p.id,t:p.n||('รหัส '+p.id),sub:'',q:p.id}})}
   return o;
 }
-function pruneSelections(){['brand','model'].concat(LEVEL).forEach(function(k){var set=st.f[k];if(!set.size)return;var valid={};optionsFor(k).forEach(function(o){valid[o.v]=1});set.forEach(function(v){if(!valid[v])set.delete(v)})})}
+function pruneSelections(){['brand','model','func','prod'].concat(LEVEL).forEach(function(k){var set=st.f[k];if(!set.size)return;var valid={};optionsFor(k).forEach(function(o){valid[o.v]=1});set.forEach(function(v){if(!valid[v])set.delete(v)})})}
 var openPop=null;
 function buildFilters(){
   var h='<div class="fld"><label>Month</label><select class="fsel" id="fMonth">'+D.months.map(function(m){return '<option value="'+m+'"'+(m===st.month?' selected':'')+'>'+MON[m%100-1]+' '+Math.floor(m/100)+'</option>'}).join('')+'</select></div>';
@@ -939,7 +957,7 @@ function buildFilters(){
   $('fWeek').onchange=function(){var v=this.value;st.days=new Set();if(v==='0'){st.week=0}else{st.week=v;var w=curWeek();
     var tm=(w.thu/100)|0;if(D.months.indexOf(tm)<0){var dd=w.dks.filter(function(k){return D.dkAvail[k]});tm=(dd[dd.length-1]/100)|0}st.month=tm}
     render()};
-  $('fReset').onclick=function(){LEVEL.concat(['brand','model']).forEach(function(k){st.f[k].clear()});st.days=new Set();st.week=0;render()};
+  $('fReset').onclick=function(){LEVEL.concat(['brand','model','func','prod']).forEach(function(k){st.f[k].clear()});st.days=new Set();st.week=0;render()};
   Array.prototype.forEach.call($('frow').querySelectorAll('.msel-btn'),function(b){b.onclick=function(e){e.stopPropagation();togglePop(b.dataset.k)}});
 }
 function togglePop(k){var p=$('frow').querySelector('.pop[data-k="'+k+'"]');if(openPop&&openPop!==p)openPop.classList.remove('open');if(p.classList.contains('open')){p.classList.remove('open');openPop=null;return}fillPop(k,p,'');p.classList.add('open');openPop=p;var i=p.querySelector('input[type=search]');if(i&&window.innerWidth>720)i.focus()}
@@ -970,7 +988,7 @@ function updateFilterBtns(){
     else if(set.size>1)t=set.size+' รายการ';
     b.textContent=t;b.classList.toggle('act',set.size>0)});
   var parts=[monthName(st.month)];var ds=selDates();parts.push(st.week?curWeek().label:st.days.size?ds.length+' วัน':'MTD');
-  LEVEL.concat(st.tab==='DBRAND'?['brand','model']:[]).forEach(function(k){if(st.f[k].size)parts.push(FILTERS.filter(function(F){return F.k===k})[0].label+' '+st.f[k].size)});
+  LEVEL.concat(st.tab==='DBRAND'?['brand','model']:st.tab==='STAFF'?['func','prod']:[]).forEach(function(k){if(st.f[k].size)parts.push(FILTERS.filter(function(F){return F.k===k})[0].label+' '+st.f[k].size)});
   $('fsumTxt').textContent=parts.join(' · ');
 }
 function availDays(mk){return D.mdays[mk]||[]}
@@ -1013,16 +1031,20 @@ function compute(pk,MT){
   var isB=pk==='DBRAND', bF=isB&&st.f.brand.size, mF=isB&&st.f.model.size, bSet={}, mSet={};
   if(bF)st.f.brand.forEach(function(x){bSet[+x]=1});if(mF)st.f.model.forEach(function(x){mSet[+x]=1});
   R.brand={};R.brandPrev={};R.model={};R.modelPrev={};R.modelF=!!mF;
+  var isS=pk==='STAFF', prF=isS&&st.f.prod.size, fnF=isS&&st.f.func.size, prS={}, fnOK=null;
+  if(prF)st.f.prod.forEach(function(x){prS[+x]=1});
+  if(fnF){fnOK=new Uint8Array(D.P.length);D.P.forEach(function(p){if(st.f.func.has(p.et||'(ไม่ระบุ)'))fnOK[p.i]=1})}
+  function sOK(prod,p){return (!prF||prS[prod])&&(!fnF||fnOK[p])}
   for(var j=0;j<f.d.length;j++){
     var s=f.s[j];if(!shopOK[s])continue;
-    if(bF&&!bSet[f.m[j]])continue;if(mF&&!mSet[f.md[j]])continue;
+    if(bF&&!bSet[f.m[j]])continue;if(mF&&!mSet[f.md[j]])continue;if(isS&&!sOK(f.m[j],f.p[j]))continue;
     var dk=f.d[j], mk=(dk/100)|0, dd=dk%100, v=m[j];
     if(mk===mo){R.daily[dd]+=v;R.dailyG[D.S[s].g][dd]+=v}
     if(sdSet[dk]){R.tot+=v;R.alt+=alt[j];R.shop[s]+=v;R.mix[f.m[j]]=(R.mix[f.m[j]]||0)+v;if(isB){R.brand[f.m[j]]=(R.brand[f.m[j]]||0)+v;R.model[f.md[j]]=(R.model[f.md[j]]||0)+v}}
     if(prSet[dk]){R.prev+=v;R.altPrev+=alt[j];R.shopPrev[s]+=v;if(isB){R.brandPrev[f.m[j]]=(R.brandPrev[f.m[j]]||0)+v;R.modelPrev[f.md[j]]=(R.modelPrev[f.md[j]]||0)+v}}
   }
   var sf=D.sfacts[pk], sm=MT==='n'?sf.n:sf.q;
-  for(j=0;j<sf.d.length;j++){var s2=sf.s[j];if(!shopOK[s2])continue;var p2=sf.p[j],k2=sf.d[j],v2=sm[j];
+  for(j=0;j<sf.d.length;j++){var s2=sf.s[j];if(!shopOK[s2])continue;if(isS&&!sOK(sf.m[j],sf.p[j]))continue;var p2=sf.p[j],k2=sf.d[j],v2=sm[j];
     if(sdSet[k2])R.staff[p2]=(R.staff[p2]||0)+v2;if(prSet[k2])R.staffPrev[p2]=(R.staffPrev[p2]||0)+v2}
   R.hasPrev=pmOk;
   // targets
@@ -1046,10 +1068,16 @@ function compute(pk,MT){
   }
   // staff targets exist only for the Target Staff month
   var sDays=sdk.filter(function(k){return ((k/100)|0)===D.tgtM}).length, sfac=sDays/tDim;
-  D.tgtStaff[pk].forEach(function(t){if(!shopOK[t[1]])return;if(staffF&&!staffOK[t[0]])return;
+  D.tgtStaff[pk].forEach(function(t){if(!shopOK[t[1]])return;if(staffF&&!staffOK[t[0]])return;if(isS&&!sOK(t[4],t[0]))return;
     var p=t[0];R.staffShop[p]=R.staffShop[p]||{};R.staffShop[p][t[1]]=(R.staffShop[p][t[1]]||0)+1;
     if(sDays>0){R.staffTF[p]=(R.staffTF[p]||0)+t[2+ti];R.staffT[p]=(R.staffT[p]||0)+t[2+ti]*sfac}});
   R.brandT={};R.brandTF={};
+  if(isS){
+    // Staff indy: shop targets = sum of Target Staff of the selected Function / Product
+    R.shopT=new Float64Array(D.S.length);R.shopTF=new Float64Array(D.S.length);R.altT=0;R.hasT=sDays>0;R.monthly=false;
+    if(R.hasT){R.dim=tDim;var tsd4=sdk.filter(function(k){return ((k/100)|0)===D.tgtM});R.maxDay=tsd4.length?tsd4[tsd4.length-1]%100:0}
+    if(R.hasT)D.tgtStaff.STAFF.forEach(function(t){if(!shopOK[t[1]]||!sOK(t[4],t[0]))return;R.shopTF[t[1]]+=t[2+ti];R.shopT[t[1]]+=t[2+ti]*sfac;R.altT+=t[3-ti]*sfac});
+  }
   if(isB){
     // Device By Brand: targets from Target Device By Brand (shop × brand); no model-level target
     R.shopT=new Float64Array(D.S.length);R.shopTF=new Float64Array(D.S.length);R.altT=0;
@@ -1066,7 +1094,7 @@ function compute(pk,MT){
   }
   var tS=0,tSF=0;D.S.forEach(function(s){tS+=R.shopT[s.i];tSF+=R.shopTF[s.i]});
   var tP=0,tPF=0;Object.keys(R.staffT).forEach(function(k){tP+=R.staffT[k];tPF+=R.staffTF[k]});
-  R.tgt=staffF?tP:tS;R.tgtFull=staffF?tPF:tSF;R.tgtSrc=isB?'Target':pk==='CHAMP'?'Target Staff (Ret_chpn_1)':staffF?'Target Staff':'Target';
+  R.tgt=staffF?tP:tS;R.tgtFull=staffF?tPF:tSF;R.tgtSrc=isB?'Target':isS?'Target Staff':pk==='CHAMP'?'Target Staff (Ret_chpn_1)':staffF?'Target Staff':'Target';
   if(!isB&&!monthly)R.altT=0;if(R.hasT&&!isB&&!monthly){var ai=1-ti;if(staffF){D.tgtStaff[pk].forEach(function(t){if(shopOK[t[1]]&&staffOK[t[0]])R.altT+=t[2+ai]*fac})}else D.S.forEach(function(s){if(shopOK[s.i])R.altT+=tgS[s.i][ai]*fac})}
   if(pk==='CHAMP'&&sdk.some(function(k){return ((k/100)|0)!==D.tgtM})){R.hasT=false}
   if(R.hasT&&!(R.tgtFull>0)){R.hasT=false;R.noTgtMetric=true}
